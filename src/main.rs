@@ -3,41 +3,72 @@ extern crate sdl2;
 use sdl2::pixels::Color;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
-use sdl2::render::Canvas;
-use sdl2::video::Window;
-use sdl2::rect::Rect;
+use sdl2::render::{WindowCanvas, Texture};
+use sdl2::image::{self, LoadTexture, InitFlag};
 use std::time::Duration;
 use std::thread;
 
-const SCREEN_WIDTH: u32 = 3200;
-const SCREEN_HEIGHT: u32 = 1800;
+const SCREEN_WIDTH: u32 = 800;
+const SCREEN_HEIGHT: u32 = 600;
 
-fn main() {
+fn render(canvas: &mut WindowCanvas, color: Color, texture: &Texture) -> Result<(), String> {
+
+    canvas.set_draw_color(color);
+    canvas.clear();
+
+    canvas.copy(texture, None, None)?;
+
+    canvas.present();
+
+    Ok(())
+
+}
+
+fn main() -> Result<(), String> {
     
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
-    // let window = video_subsystem.window("sdl2 demo", SCREEN_WIDTH, SCREEN_HEIGHT)
-    //     .position_centered()
-    //     .build()
-    //     .unwrap();
+    let _image_context = image::init(InitFlag::PNG | InitFlag::JPG)?;
 
-    let window = video_subsystem.window("sdl2", SCREEN_WIDTH, SCREEN_HEIGHT).build().unwrap();
+    let window = video_subsystem.window("sdl2", SCREEN_WIDTH, SCREEN_HEIGHT)
+        .position_centered()
+        .build().unwrap();
 
-    let mut canvas : Canvas<Window> = window.into_canvas()
+    let mut canvas : WindowCanvas = window.into_canvas()
         .present_vsync()
         .build().unwrap();
 
-    canvas.set_draw_color(Color::RGB(255,255,255));
-    canvas.clear();
+    let texture_creator = canvas.texture_creator();
+    let texture = texture_creator.load_texture("assets/earth.jpg")?;
 
-    canvas.set_draw_color(Color::RGB(255, 210, 0));
+    let mut event_pump = sdl_context.event_pump()?;
+    let mut i = 0;
 
-    canvas.fill_rect(Rect::new(10, 10, 780, 580));
+    'running: loop{
 
-    canvas.present();
+        for event in event_pump.poll_iter(){
 
-    thread::sleep(Duration::from_secs(5));
+            match event{
 
+                Event::Quit {..} |
+                Event::KeyDown { keycode: Some(Keycode::Escape), ..} => {
+                    break 'running;
+                },
+                _ => {}
+
+            }
+
+        }
+
+    i = (i + 1) % 255;
+
+    render(&mut canvas, Color::RGB(i, 64, 255 - i), &texture);
+
+    thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
+
+    }
+
+    Ok(())
 
 }
