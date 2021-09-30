@@ -11,6 +11,8 @@ use std::thread;
 
 const SCREEN_WIDTH: u32 = 1920;
 const SCREEN_HEIGHT: u32 = 1080;
+const PLAYER_SPRITE_WIDTH: u32 = 150;
+const PLAYER_SPRITE_HEIGHT: u32 = 150;
 
 //XAxis Enum tracks the states of the x axis inputs given by the AD keys
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -58,15 +60,23 @@ fn update_player(player: &mut Player){
         },
         Right =>{
             player.position = player.position.offset(player.speed, 0);},
-        XAxis::Off | XAxis::Both =>{},
+        XAxis::Off |
+        XAxis::Both =>{},
     };
     match player.direction.1{
         Up =>{
             player.position = player.position.offset(0, -player.speed);},
         Down =>{
             player.position = player.position.offset(0, player.speed);},
-        YAxis::Off | YAxis::Both =>{},
+        YAxis::Off |
+        YAxis::Both =>{},
     };
+
+    //check if the player is heading out of bounds
+    if (player.position.x - PLAYER_SPRITE_WIDTH as i32 / 2) < -(SCREEN_WIDTH as i32 / 2) {player.position.x = player.position.x + player.speed;}
+    else if (player.position.x + PLAYER_SPRITE_WIDTH as i32 / 2) > SCREEN_WIDTH as i32 / 2{player.position.x = player.position.x - player.speed;}
+    if (player.position.y - PLAYER_SPRITE_HEIGHT as i32 / 2) < -(SCREEN_HEIGHT as i32 / 2) {player.position.y = player.position.y + player.speed;}
+    else if (player.position.y + PLAYER_SPRITE_HEIGHT as i32 /2) > SCREEN_HEIGHT as i32 / 2{player.position.y = player.position.y - player.speed;}
 
 }
 
@@ -116,7 +126,7 @@ fn main() -> Result<(), String> {
     let mut player = Player{
 
         position: Point::new(0,0),
-        sprite: Rect::new(0,0,150,150),
+        sprite: Rect::new(0,0,PLAYER_SPRITE_WIDTH,PLAYER_SPRITE_HEIGHT),
         speed: 5,
         direction: (XAxis::Off, YAxis::Off),
 
@@ -137,56 +147,56 @@ fn main() -> Result<(), String> {
                 },
                 //Update direction enums when keys are pressed and released
                 Event::KeyDown { keycode: Some(Keycode::W), repeat: false, .. } => {
-                    if(player.direction.1 == YAxis::Down){
+                    if player.direction.1 == YAxis::Down {
                         player.direction.1 = YAxis::Both;
                     } else {
                         player.direction.1 = YAxis::Up;
                     }
                 },
                 Event::KeyDown { keycode: Some(Keycode::A), repeat: false, .. } => {
-                    if(player.direction.0 == XAxis::Right){
+                    if player.direction.0 == XAxis::Right {
                         player.direction.0 = XAxis::Both;
                     } else {
                         player.direction.0 = XAxis::Left;
                     }
                 },
                 Event::KeyDown { keycode: Some(Keycode::S), repeat: false, .. } => {
-                    if(player.direction.1 == YAxis::Up){
+                    if player.direction.1 == YAxis::Up {
                         player.direction.1 = YAxis::Both;
                     } else {
                         player.direction.1 = YAxis::Down;
                     }
                 },
                 Event::KeyDown { keycode: Some(Keycode::D), repeat: false, .. } => {
-                    if(player.direction.0 == XAxis::Left){
+                    if player.direction.0 == XAxis::Left {
                         player.direction.0 = XAxis::Both;
                     } else {
                         player.direction.0 = XAxis::Right;
                     }
                 },
                 Event::KeyUp { keycode: Some(Keycode::W), repeat: false, .. } => {
-                    if(player.direction.1 == YAxis::Both){
+                    if player.direction.1 == YAxis::Both {
                         player.direction.1 = YAxis::Down;
                     } else {
                         player.direction.1 = YAxis::Off;
                     }
                 },
                 Event::KeyUp { keycode: Some(Keycode::A), repeat: false, .. } => {
-                    if(player.direction.0 == XAxis::Both){
+                    if player.direction.0 == XAxis::Both {
                         player.direction.0 = XAxis::Right;
                     } else {
                         player.direction.0 = XAxis::Off;
                     }
                 },
                 Event::KeyUp { keycode: Some(Keycode::S), repeat: false, .. } => {
-                    if(player.direction.1 == YAxis::Both){
+                    if player.direction.1 == YAxis::Both {
                         player.direction.1 = YAxis::Up;
                     } else {
                         player.direction.1 = YAxis::Off;
                     }
                 },
                 Event::KeyUp { keycode: Some(Keycode::D), repeat: false, .. } => {
-                    if(player.direction.0 == XAxis::Both){
+                    if player.direction.0 == XAxis::Both {
                         player.direction.0 = XAxis::Left;
                     } else {
                         player.direction.0 = XAxis::Off;
