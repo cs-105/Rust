@@ -9,11 +9,17 @@ use sdl2::image::{self, LoadTexture, InitFlag};
 use std::time::Duration;
 use std::thread;
 
+//defining constants
+//dimensions and title of the window to be rendered
 const SCREEN_WIDTH: u32 = 1920;
 const SCREEN_HEIGHT: u32 = 1080;
+const WINDOW_TITLE: &str = "The Game";
+
+//dimensions of the player sprite
 const PLAYER_SPRITE_WIDTH: u32 = 150;
 const PLAYER_SPRITE_HEIGHT: u32 = 150;
 
+const PLAYER_MOVEMENT_SPEED: u32 = 10;
 //XAxis Enum tracks the states of the x axis inputs given by the AD keys
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum XAxis {
@@ -36,49 +42,143 @@ enum YAxis {
 
 }
 
+//Physics vector, mainly used for storing velocity
+#[derive(Debug, Clone, Copy)]
+struct Vector{
+
+    magnitude: f64,
+    direction: f64, 
+
+}
+
 //Player Struct keeps track of data about the player avatar
 #[derive(Debug)]
 struct Player{
 
     position: Point, //2-D Cartesian Point 
     sprite: Rect, //Dimensions are used to select what to render from the spritesheet
-    speed: i32, //Rate at which position is updated
+    speed: u32,
     direction: (XAxis, YAxis), //Keeps track of what buttons are being pressed for processing with the update_player function
+    heading: f64, //Heading of the ship
+
+}
+
+//gets x and y components of a vector
+fn get_components(vector: Vector) -> (f64, f64){
+
+    let result_x = vector.magnitude * vector.direction.to_radians().cos();
+    let result_y = vector.magnitude * vector.direction.to_radians().sin();
+
+    (result_x, result_y)
+
+}
+
+//Transforms the x and y velocty vectors into coordinates to offset
+fn transform_vector(velocity_x: Vector, velocity_y: Vector, heading: f64) -> (f64, f64){
+
+    //vectors transformed to match the unit circle
+    let transformed_x = Vector{
+
+        magnitude: velocity_x.magnitude,
+        direction: heading + 90.0 + velocity_x.direction,
+
+    };
+    let transformed_y = Vector{
+
+        magnitude: velocity_y.magnitude,
+        direction: heading + 90.0 + velocity_y.direction,
+
+    };
+
+    let offset_x = get_components(transformed_x).0 + get_components(transformed_y).0;
+    let offset_y = get_components(transformed_x).1 + get_components(transformed_y).1;
+
+    (offset_x, -offset_y)
 
 }
 
 //Function to update the player's position on the screen, processes the direction component of the player passed in
-//TODO: Update function so it moves by player speed on the diagonals too
+//TODO: Update function so it moves by player velocity on the diagonals too
 fn update_player(player: &mut Player){
 
     use self::XAxis::*;
     use self::YAxis::*;
 
-    match player.direction.0{
-        Left =>{
-            player.position = player.position.offset(-player.speed, 0);
-        },
-        Right =>{
-            player.position = player.position.offset(player.speed, 0);},
-        XAxis::Off |
-        XAxis::Both =>{},
+    //velocity vectors relative to the player's heading
+    let mut velocity_x = Vector{
+
+        magnitude: 0.0,
+        direction: 0.0,
+
     };
-    match player.direction.1{
-        Up =>{
-            player.position = player.position.offset(0, -player.speed);},
-        Down =>{
-            player.position = player.position.offset(0, player.speed);},
-        YAxis::Off |
-        YAxis::Both =>{},
+    let mut velocity_y = Vector{
+
+        magnitude: 0.0,
+        direction: 0.0,
+
     };
 
-    //check if the player is heading out of bounds
-    if (player.position.x - PLAYER_SPRITE_WIDTH as i32 / 2) < -(SCREEN_WIDTH as i32 / 2) {player.position.x = player.position.x + player.speed;}
-    else if (player.position.x + PLAYER_SPRITE_WIDTH as i32 / 2) > SCREEN_WIDTH as i32 / 2{player.position.x = player.position.x - player.speed;}
-    if (player.position.y - PLAYER_SPRITE_HEIGHT as i32 / 2) < -(SCREEN_HEIGHT as i32 / 2) {player.position.y = player.position.y + player.speed;}
-    else if (player.position.y + PLAYER_SPRITE_HEIGHT as i32 /2) > SCREEN_HEIGHT as i32 / 2{player.position.y = player.position.y - player.speed;}
+    match player.direction.0{
+
+        Left => {
+
+            velocity_x.magnitude = player.speed as f64;
+            velocity_x.direction = 90.0;
+
+        },
+        Right => {
+
+            velocity_x.magnitude = player.speed as f64;
+            velocity_x.direction = 270.0;
+
+        },
+        XAxis::Off |
+        XAxis::Both => {
+
+            velocity_x.magnitude = 0.0;
+            velocity_x.direction = 0.0;
+
+        },
+
+    };
+    match player.direction.1 {
+        Up => {
+
+            velocity_y.magnitude = player.speed as f64;
+            velocity_y.direction = 0.0;
+
+        },
+        Down => {
+
+            velocity_y.magnitude = player.speed as f64;
+            velocity_y.direction = 180.0;
+
+        },
+        YAxis::Off |
+        YAxis::Both => {
+
+            velocity_y.magnitude = 0.0;
+            velocity_y.direction = 0.0;
+
+        },
+    };
+
+    let offset = transform_vector(velocity_x, velocity_y, player.heading);
+
+    println!("Offsetting by ({}, {})", offset.0 as i32, offset.1 as i32);
+
+    player.position = player.position.offset(offset.0 as i32, offset.1 as i32);
+
+    //check if the player is heading out of bounds on the x axis and undo the position change
+    // if (player.position.x - PLAYER_SPRITE_WIDTH as i32 / 2) < -(SCREEN_WIDTH as i32 / 2) {player.position.x = player.position.x + player.velocity.0;}
+    // else if (player.position.x + PLAYER_SPRITE_WIDTH as i32 / 2) > SCREEN_WIDTH as i32 / 2{player.position.x = player.position.x - player.velocity.0;}
+    // //check if the player is heading out of bounds on the y axis and undo the position change
+    // if (player.position.y - PLAYER_SPRITE_HEIGHT as i32 / 2) < -(SCREEN_HEIGHT as i32 / 2) {player.position.y = player.position.y + player.velocity.0;}
+    // else if (player.position.y + PLAYER_SPRITE_HEIGHT as i32 /2) > SCREEN_HEIGHT as i32 / 2{player.position.y = player.position.y - player.velocity.0;}
 
 }
+
+//TODO:Create function that procedurally generates a background
 
 //update the canvas that is passed in, handles drawing the player sprite into the new position
 fn render(
@@ -111,7 +211,7 @@ fn main() -> Result<(), String> {
 
     let _image_context = image::init(InitFlag::PNG | InitFlag::JPG)?;
 
-    let window = video_subsystem.window("sdl2", SCREEN_WIDTH, SCREEN_HEIGHT)
+    let window = video_subsystem.window(WINDOW_TITLE, SCREEN_WIDTH, SCREEN_HEIGHT)
         .position_centered()
         .build().unwrap();
 
@@ -119,7 +219,7 @@ fn main() -> Result<(), String> {
         .present_vsync()
         .build().unwrap();
 
-    //create the player ship sprite
+    //create the player ship sprite from an image
     let texture_creator = canvas.texture_creator();
     let texture = texture_creator.load_texture("assets/ship.png")?;
 
@@ -127,14 +227,16 @@ fn main() -> Result<(), String> {
 
         position: Point::new(0,0),
         sprite: Rect::new(0,0,PLAYER_SPRITE_WIDTH,PLAYER_SPRITE_HEIGHT),
-        speed: 5,
+        speed: PLAYER_MOVEMENT_SPEED,
         direction: (XAxis::Off, YAxis::Off),
+        heading: 0.0,
 
     };
 
     let mut event_pump = sdl_context.event_pump()?;
     let mut i = 0;
 
+    //game loop
     'running: loop{
 
         for event in event_pump.poll_iter(){
@@ -200,7 +302,7 @@ fn main() -> Result<(), String> {
                         player.direction.0 = XAxis::Left;
                     } else {
                         player.direction.0 = XAxis::Off;
-                    }
+                    }//FIXME: This can be implemented better by storing inputs in a stack (VecDeque) and processing that in update_player
                 },
                 _ => {}
 
@@ -212,6 +314,7 @@ fn main() -> Result<(), String> {
     i = (i + 1) % 255;
     update_player(&mut player);
 
+    //draw to screen
     render(&mut canvas, Color::RGB(0,0,0), &texture, &player)?;
 
     //Lmimt to 60 fps
