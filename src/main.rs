@@ -163,18 +163,16 @@ fn update_player(player: &mut Player){
         },
     };
 
-    let offset = transform_vector(velocity_x, velocity_y, player.heading);
+    let (offset_x, offset_y) = transform_vector(velocity_x, velocity_y, player.heading);
 
-    println!("Offsetting by ({}, {})", offset.0 as i32, offset.1 as i32);
-
-    player.position = player.position.offset(offset.0 as i32, offset.1 as i32);
+    player.position = player.position.offset(offset_x as i32, offset_y as i32);
 
     //check if the player is heading out of bounds on the x axis and undo the position change
-    // if (player.position.x - PLAYER_SPRITE_WIDTH as i32 / 2) < -(SCREEN_WIDTH as i32 / 2) {player.position.x = player.position.x + player.velocity.0;}
-    // else if (player.position.x + PLAYER_SPRITE_WIDTH as i32 / 2) > SCREEN_WIDTH as i32 / 2{player.position.x = player.position.x - player.velocity.0;}
-    // //check if the player is heading out of bounds on the y axis and undo the position change
-    // if (player.position.y - PLAYER_SPRITE_HEIGHT as i32 / 2) < -(SCREEN_HEIGHT as i32 / 2) {player.position.y = player.position.y + player.velocity.0;}
-    // else if (player.position.y + PLAYER_SPRITE_HEIGHT as i32 /2) > SCREEN_HEIGHT as i32 / 2{player.position.y = player.position.y - player.velocity.0;}
+    if (player.position.x - PLAYER_SPRITE_WIDTH as i32 / 2) < -(SCREEN_WIDTH as i32 / 2) {player.position.x = player.position.x + player.speed as i32;}
+    else if (player.position.x + PLAYER_SPRITE_WIDTH as i32 / 2) > SCREEN_WIDTH as i32 / 2{player.position.x = player.position.x - player.speed as i32;}
+    //check if the player is heading out of bounds on the y axis and undo the position change
+    if (player.position.y - PLAYER_SPRITE_HEIGHT as i32 / 2) < -(SCREEN_HEIGHT as i32 / 2) {player.position.y = player.position.y + player.speed as i32;}
+    else if (player.position.y + PLAYER_SPRITE_HEIGHT as i32 /2) > SCREEN_HEIGHT as i32 / 2{player.position.y = player.position.y - player.speed as i32;}
 
 }
 
