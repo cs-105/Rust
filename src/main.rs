@@ -20,6 +20,8 @@ const PLAYER_SPRITE_WIDTH: u32 = 150;
 const PLAYER_SPRITE_HEIGHT: u32 = 150;
 
 const PLAYER_MOVEMENT_SPEED: u32 = 10;
+
+//TODO: Move to separate file
 //XAxis Enum tracks the states of the x axis inputs given by the AD keys
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum XAxis {
@@ -31,6 +33,7 @@ enum XAxis {
 
 }
 
+//TODO: Move to separate file
 //YAxis Enum tracks the states of the y axis inputs given by the WS keys
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum YAxis {
@@ -42,6 +45,7 @@ enum YAxis {
 
 }
 
+//TODO: Move to separate file
 //Physics vector, mainly used for storing velocity
 #[derive(Debug, Clone, Copy)]
 struct Vector{
@@ -51,18 +55,20 @@ struct Vector{
 
 }
 
+//TODO: Move to separate file
 //Player Struct keeps track of data about the player avatar
 #[derive(Debug)]
 struct Player{
 
     position: Point, //2-D Cartesian Point 
     sprite: Rect, //Dimensions are used to select what to render from the spritesheet
-    speed: u32,
+    speed: u32, //Rate at which the player sprite is moved
     direction: (XAxis, YAxis), //Keeps track of what buttons are being pressed for processing with the update_player function
-    heading: f64, //Heading of the ship
+    heading: f64, //Heading of the player
 
 }
 
+//TODO: Move to separate file
 //gets x and y components of a vector
 fn get_components(vector: Vector) -> (f64, f64){
 
@@ -73,6 +79,7 @@ fn get_components(vector: Vector) -> (f64, f64){
 
 }
 
+//TODO: Move to separate file
 //Transforms the x and y velocty vectors into coordinates to offset
 fn transform_vector(velocity_x: Vector, velocity_y: Vector, heading: f64) -> (f64, f64){
 
@@ -97,6 +104,7 @@ fn transform_vector(velocity_x: Vector, velocity_y: Vector, heading: f64) -> (f6
 
 }
 
+//TODO: Move to separate file
 //Function to update the player's position on the screen, processes the direction component of the player passed in
 //TODO: Update function so it moves by player velocity on the diagonals too
 fn update_player(player: &mut Player){
@@ -168,11 +176,14 @@ fn update_player(player: &mut Player){
     player.position = player.position.offset(offset_x as i32, offset_y as i32);
 
     //check if the player is heading out of bounds on the x axis and undo the position change
-    if (player.position.x - PLAYER_SPRITE_WIDTH as i32 / 2) < -(SCREEN_WIDTH as i32 / 2) {player.position.x = player.position.x + player.speed as i32;}
-    else if (player.position.x + PLAYER_SPRITE_WIDTH as i32 / 2) > SCREEN_WIDTH as i32 / 2{player.position.x = player.position.x - player.speed as i32;}
+    if (player.position.x - PLAYER_SPRITE_WIDTH as i32 / 2) < -(SCREEN_WIDTH as i32 / 2) || (player.position.x + PLAYER_SPRITE_WIDTH as i32 / 2) > SCREEN_WIDTH as i32 / 2{
+        player.position = player.position.offset(-offset_x as i32, 0);
+    }
+
     //check if the player is heading out of bounds on the y axis and undo the position change
-    if (player.position.y - PLAYER_SPRITE_HEIGHT as i32 / 2) < -(SCREEN_HEIGHT as i32 / 2) {player.position.y = player.position.y + player.speed as i32;}
-    else if (player.position.y + PLAYER_SPRITE_HEIGHT as i32 /2) > SCREEN_HEIGHT as i32 / 2{player.position.y = player.position.y - player.speed as i32;}
+    if (player.position.y - PLAYER_SPRITE_HEIGHT as i32 / 2) < -(SCREEN_HEIGHT as i32 / 2) || (player.position.y + PLAYER_SPRITE_HEIGHT as i32 /2) > SCREEN_HEIGHT as i32 / 2{
+        player.position = player.position.offset(0,-offset_y as i32);
+    }
 
 }
 
@@ -202,6 +213,7 @@ fn render(
 
 }
 
+//TODO: Go through and outsource certain things to different files
 fn main() -> Result<(), String> {
     
     let sdl_context = sdl2::init().unwrap();
@@ -232,7 +244,6 @@ fn main() -> Result<(), String> {
     };
 
     let mut event_pump = sdl_context.event_pump()?;
-    let mut i = 0;
 
     //game loop
     'running: loop{
@@ -309,14 +320,13 @@ fn main() -> Result<(), String> {
         }
 
     //Update
-    i = (i + 1) % 255;
     update_player(&mut player);
 
     //draw to screen
     render(&mut canvas, Color::RGB(0,0,0), &texture, &player)?;
 
     //Lmimt to 60 fps
-    thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
+    thread::sleep(Duration::new(0, 1_000_000_000u32 / 144));
 
     }
 
