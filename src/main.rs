@@ -1,4 +1,4 @@
-mod util::test::Test;
+mod input;
 
 extern crate sdl2;
 
@@ -10,6 +10,13 @@ use sdl2::rect::{Rect, Point};
 use sdl2::image::{self, LoadTexture, InitFlag};
 use std::time::Duration;
 use std::thread;
+
+//imports from local crate
+use input::controller::XAxis;
+use input::controller::YAxis;
+use input::controller::Vector;
+use input::controller::Player;
+use input::controller::transform_vector;
 
 //defining constants
 //dimensions and title of the window to be rendered
@@ -24,170 +31,87 @@ const PLAYER_SPRITE_HEIGHT: u32 = 150;
 const PLAYER_MOVEMENT_SPEED: u32 = 10;
 
 //TODO: Move to separate file
-//XAxis Enum tracks the states of the x axis inputs given by the AD keys
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum XAxis {
+    //Function to update the player's position on the screen, processes the direction component of the player passed in
+    //TODO: Update function so it moves by player velocity on the diagonals too
+    pub fn update_player(player: &mut Player){
 
-    Left,
-    Right,
-    Off,
-    Both,
+        use self::XAxis::*;
+        use self::YAxis::*;
 
-}
+        //velocity vectors relative to the player's heading
+        let mut velocity_x = Vector{
 
-//TODO: Move to separate file
-//YAxis Enum tracks the states of the y axis inputs given by the WS keys
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum YAxis {
+            magnitude: 0.0,
+            direction: 0.0,
 
-    Up,
-    Down,
-    Off,
-    Both,
+        };
+        let mut velocity_y = Vector{
 
-}
+            magnitude: 0.0,
+            direction: 0.0,
 
-//TODO: Move to separate file
-//Physics vector, mainly used for storing velocity
-#[derive(Debug, Clone, Copy)]
-struct Vector{
+        };
 
-    magnitude: f64,
-    direction: f64, 
+        match player.direction.0{
 
-}
+            Left => {
 
-//TODO: Move to separate file
-//Player Struct keeps track of data about the player avatar
-#[derive(Debug)]
-struct Player{
+                velocity_x.magnitude = player.speed as f64;
+                velocity_x.direction = 90.0;
 
-    position: Point, //2-D Cartesian Point 
-    sprite: Rect, //Dimensions are used to select what to render from the spritesheet
-    speed: u32, //Rate at which the player sprite is moved
-    direction: (XAxis, YAxis), //Keeps track of what buttons are being pressed for processing with the update_player function
-    heading: f64, //Heading of the player
+            },
+            Right => {
 
-}
+                velocity_x.magnitude = player.speed as f64;
+                velocity_x.direction = 270.0;
 
-//TODO: Move to separate file
-//gets x and y components of a vector
-fn get_components(vector: Vector) -> (f64, f64){
+            },
+            XAxis::Off |
+            XAxis::Both => {
 
-    let result_x = vector.magnitude * vector.direction.to_radians().cos();
-    let result_y = vector.magnitude * vector.direction.to_radians().sin();
+                velocity_x.magnitude = 0.0;
+                velocity_x.direction = 0.0;
 
-    (result_x, result_y)
+            },
 
-}
+        };
+        match player.direction.1 {
+            Up => {
 
-//TODO: Move to separate file
-//Transforms the x and y velocty vectors into coordinates to offset
-fn transform_vector(velocity_x: Vector, velocity_y: Vector, heading: f64) -> (f64, f64){
+                velocity_y.magnitude = player.speed as f64;
+                velocity_y.direction = 0.0;
 
-    //vectors transformed to match the unit circle
-    let transformed_x = Vector{
+            },
+            Down => {
 
-        magnitude: velocity_x.magnitude,
-        direction: heading + 90.0 + velocity_x.direction,
+                velocity_y.magnitude = player.speed as f64;
+                velocity_y.direction = 180.0;
 
-    };
-    let transformed_y = Vector{
+            },
+            YAxis::Off |
+            YAxis::Both => {
 
-        magnitude: velocity_y.magnitude,
-        direction: heading + 90.0 + velocity_y.direction,
+                velocity_y.magnitude = 0.0;
+                velocity_y.direction = 0.0;
 
-    };
+            },
+        };
 
-    let offset_x = get_components(transformed_x).0 + get_components(transformed_y).0;
-    let offset_y = get_components(transformed_x).1 + get_components(transformed_y).1;
+        let (offset_x, offset_y) = transform_vector(velocity_x, velocity_y, player.heading);
 
-    (offset_x, -offset_y)
+        player.position = player.position.offset(offset_x as i32, offset_y as i32);
 
-}
+        //check if the player is heading out of bounds on the x axis and undo the position change
+        if (player.position.x - PLAYER_SPRITE_WIDTH as i32 / 2) < -(SCREEN_WIDTH as i32 / 2) || (player.position.x + PLAYER_SPRITE_WIDTH as i32 / 2) > SCREEN_WIDTH as i32 / 2{
+            player.position = player.position.offset(-offset_x as i32, 0);
+        }
 
-//TODO: Move to separate file
-//Function to update the player's position on the screen, processes the direction component of the player passed in
-//TODO: Update function so it moves by player velocity on the diagonals too
-fn update_player(player: &mut Player){
+        //check if the player is heading out of bounds on the y axis and undo the position change
+        if (player.position.y - PLAYER_SPRITE_HEIGHT as i32 / 2) < -(SCREEN_HEIGHT as i32 / 2) || (player.position.y + PLAYER_SPRITE_HEIGHT as i32 /2) > SCREEN_HEIGHT as i32 / 2{
+            player.position = player.position.offset(0,-offset_y as i32);
+        }
 
-    use self::XAxis::*;
-    use self::YAxis::*;
-
-    //velocity vectors relative to the player's heading
-    let mut velocity_x = Vector{
-
-        magnitude: 0.0,
-        direction: 0.0,
-
-    };
-    let mut velocity_y = Vector{
-
-        magnitude: 0.0,
-        direction: 0.0,
-
-    };
-
-    match player.direction.0{
-
-        Left => {
-
-            velocity_x.magnitude = player.speed as f64;
-            velocity_x.direction = 90.0;
-
-        },
-        Right => {
-
-            velocity_x.magnitude = player.speed as f64;
-            velocity_x.direction = 270.0;
-
-        },
-        XAxis::Off |
-        XAxis::Both => {
-
-            velocity_x.magnitude = 0.0;
-            velocity_x.direction = 0.0;
-
-        },
-
-    };
-    match player.direction.1 {
-        Up => {
-
-            velocity_y.magnitude = player.speed as f64;
-            velocity_y.direction = 0.0;
-
-        },
-        Down => {
-
-            velocity_y.magnitude = player.speed as f64;
-            velocity_y.direction = 180.0;
-
-        },
-        YAxis::Off |
-        YAxis::Both => {
-
-            velocity_y.magnitude = 0.0;
-            velocity_y.direction = 0.0;
-
-        },
-    };
-
-    let (offset_x, offset_y) = transform_vector(velocity_x, velocity_y, player.heading);
-
-    player.position = player.position.offset(offset_x as i32, offset_y as i32);
-
-    //check if the player is heading out of bounds on the x axis and undo the position change
-    if (player.position.x - PLAYER_SPRITE_WIDTH as i32 / 2) < -(SCREEN_WIDTH as i32 / 2) || (player.position.x + PLAYER_SPRITE_WIDTH as i32 / 2) > SCREEN_WIDTH as i32 / 2{
-        player.position = player.position.offset(-offset_x as i32, 0);
     }
-
-    //check if the player is heading out of bounds on the y axis and undo the position change
-    if (player.position.y - PLAYER_SPRITE_HEIGHT as i32 / 2) < -(SCREEN_HEIGHT as i32 / 2) || (player.position.y + PLAYER_SPRITE_HEIGHT as i32 /2) > SCREEN_HEIGHT as i32 / 2{
-        player.position = player.position.offset(0,-offset_y as i32);
-    }
-
-}
 
 //TODO:Create function that procedurally generates a background
 
@@ -260,56 +184,56 @@ fn main() -> Result<(), String> {
                 },
                 //Update direction enums when keys are pressed and released
                 Event::KeyDown { keycode: Some(Keycode::W), repeat: false, .. } => {
-                    if player.direction.1 == YAxis::Down {
+                    if player.get_direction_y() == YAxis::Down {
                         player.direction.1 = YAxis::Both;
                     } else {
                         player.direction.1 = YAxis::Up;
                     }
                 },
                 Event::KeyDown { keycode: Some(Keycode::A), repeat: false, .. } => {
-                    if player.direction.0 == XAxis::Right {
+                    if player.get_direction_x() == XAxis::Right {
                         player.direction.0 = XAxis::Both;
                     } else {
                         player.direction.0 = XAxis::Left;
                     }
                 },
                 Event::KeyDown { keycode: Some(Keycode::S), repeat: false, .. } => {
-                    if player.direction.1 == YAxis::Up {
+                    if player.get_direction_y() == YAxis::Up {
                         player.direction.1 = YAxis::Both;
                     } else {
                         player.direction.1 = YAxis::Down;
                     }
                 },
                 Event::KeyDown { keycode: Some(Keycode::D), repeat: false, .. } => {
-                    if player.direction.0 == XAxis::Left {
+                    if player.get_direction_x() == XAxis::Left {
                         player.direction.0 = XAxis::Both;
                     } else {
                         player.direction.0 = XAxis::Right;
                     }
                 },
                 Event::KeyUp { keycode: Some(Keycode::W), repeat: false, .. } => {
-                    if player.direction.1 == YAxis::Both {
+                    if player.get_direction_y() == YAxis::Both {
                         player.direction.1 = YAxis::Down;
                     } else {
                         player.direction.1 = YAxis::Off;
                     }
                 },
                 Event::KeyUp { keycode: Some(Keycode::A), repeat: false, .. } => {
-                    if player.direction.0 == XAxis::Both {
+                    if player.get_direction_x() == XAxis::Both {
                         player.direction.0 = XAxis::Right;
                     } else {
                         player.direction.0 = XAxis::Off;
                     }
                 },
                 Event::KeyUp { keycode: Some(Keycode::S), repeat: false, .. } => {
-                    if player.direction.1 == YAxis::Both {
+                    if player.get_direction_y() == YAxis::Both {
                         player.direction.1 = YAxis::Up;
                     } else {
                         player.direction.1 = YAxis::Off;
                     }
                 },
                 Event::KeyUp { keycode: Some(Keycode::D), repeat: false, .. } => {
-                    if player.direction.0 == XAxis::Both {
+                    if player.get_direction_x() == XAxis::Both {
                         player.direction.0 = XAxis::Left;
                     } else {
                         player.direction.0 = XAxis::Off;
