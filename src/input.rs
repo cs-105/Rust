@@ -4,6 +4,7 @@ pub mod controller{
 
 	use sdl2::rect::{Rect, Point};
 
+
 	//TODO: Move to separate file
 	//XAxis Enum tracks the states of the x axis inputs given by the AD keys
 	#[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -25,6 +26,16 @@ pub mod controller{
 	    Down,
 	    Off,
 	    Both,
+
+	}
+
+	#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+	pub enum Input{
+
+		Up,
+		Down,
+		Left,
+		Right,
 
 	}
 
@@ -108,6 +119,21 @@ pub mod controller{
 	    let offset_y = get_components(transformed_x).1 + get_components(transformed_y).1;
 
 	    (offset_x, -offset_y)
+
+	}
+
+	pub fn remove_input(input_stack: &mut Vec<Input>, remove: &Input){
+
+		for i in 0..input_stack.len(){
+
+			if input_stack[i] == *remove{
+
+				input_stack.remove(i);
+				break;
+
+			}
+
+		}
 
 	}
 
