@@ -4,31 +4,6 @@ pub mod controller{
 
 	use sdl2::rect::{Rect, Point};
 
-
-	//TODO: Move to separate file
-	//XAxis Enum tracks the states of the x axis inputs given by the AD keys
-	#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-	pub enum XAxis {
-
-	    Left,
-	    Right,
-	    Off,
-	    Both,
-
-	}
-
-	//TODO: Move to separate file
-	//YAxis Enum tracks the states of the y axis inputs given by the WS keys
-	#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-	pub enum YAxis {
-
-	    Up,
-	    Down,
-	    Off,
-	    Both,
-
-	}
-
 	#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 	pub enum Input{
 
@@ -57,32 +32,13 @@ pub mod controller{
 	    pub position: Point, //2-D Cartesian Point 
 	    pub sprite: Rect, //Dimensions are used to select what to render from the spritesheet
 	    pub speed: u32, //Rate at which the player sprite is moved
-	    pub direction: (XAxis, YAxis), //Keeps track of what buttons are being pressed for processing with the update_player function
 	    pub heading: f64, //Heading of the player
 
 	}
 
 	impl Player{
 
-		//implementing getters and setters
-		pub fn get_direction_x(&self) -> XAxis {
 
-			self.direction.0
-
-		}
-
-		pub fn get_direction_y(&self) -> YAxis {
-
-			self.direction.1
-
-		}
-
-		// pub fn set_direction(&self, x: XAxis, y: YAxis){
-
-		// 	self.direction.0 = x;
-		// 	self.direction.1 = y;
-
-		// }
 
 	}
 	

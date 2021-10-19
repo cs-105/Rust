@@ -12,8 +12,6 @@ use std::time::Duration;
 use std::thread;
 
 //imports from local crate
-use input::controller::XAxis;
-use input::controller::YAxis;
 use input::controller::Input::*;
 use input::controller::Input;
 use input::controller::Vector;
@@ -34,77 +32,74 @@ const PLAYER_SPRITE_HEIGHT: u32 = 150;
 const PLAYER_MOVEMENT_SPEED: u32 = 10;
 
 //TODO: Move to separate file
-    //Function to update the player's position on the screen, processes the direction component of the player passed in
-    //TODO: Update function so it moves by player velocity on the diagonals too
-    pub fn update_player(player: &mut Player, inputs: &mut Vec<Input>){
+//Function to update the player's position on the screen, processes the direction component of the player passed in
+//TODO: Update function so it moves by player velocity on the diagonals too
+pub fn update_player(player: &mut Player, inputs: &mut Vec<Input>){
 
-        // use self::XAxis::*;
-        // use self::YAxis::*;
+    use self::Input::*;
 
-        use self::Input::*;
+    //velocity vectors relative to the player's heading
+    let mut velocity_x = Vector{
 
-        //velocity vectors relative to the player's heading
-        let mut velocity_x = Vector{
+        magnitude: 0.0,
+        direction: 0.0,
 
-            magnitude: 0.0,
-            direction: 0.0,
+    };
+    let mut velocity_y = Vector{
+
+        magnitude: 0.0,
+        direction: 0.0,
+
+    };
+
+    for input in inputs.iter(){
+
+        match input{
+
+            Up => {
+
+                velocity_y.magnitude += player.speed as f64;
+                velocity_y.direction = 0.0;
+
+            },
+            Down => {
+
+                velocity_y.magnitude -= player.speed as f64;
+                velocity_y.direction = 0.0;
+
+            },
+            Left => {
+
+                velocity_x.magnitude += player.speed as f64;
+                velocity_x.direction = 90.0;
+
+            },
+            Right => {
+
+                velocity_x.magnitude -= player.speed as f64;
+                velocity_x.direction = 90.0;
+
+            }
 
         };
-        let mut velocity_y = Vector{
-
-            magnitude: 0.0,
-            direction: 0.0,
-
-        };
-
-        for input in inputs.iter(){
-
-            match input{
-
-                Up => {
-
-                    velocity_y.magnitude += player.speed as f64;
-                    velocity_y.direction = 0.0;
-
-                },
-                Down => {
-
-                    velocity_y.magnitude -= player.speed as f64;
-                    velocity_y.direction = 0.0;
-
-                },
-                Left => {
-
-                    velocity_x.magnitude += player.speed as f64;
-                    velocity_x.direction = 90.0;
-
-                },
-                Right => {
-
-                    velocity_x.magnitude -= player.speed as f64;
-                    velocity_x.direction = 90.0;
-
-                }
-
-            };
-
-        }
-
-        let (offset_x, offset_y) = transform_vector(velocity_x, velocity_y, player.heading);
-
-        player.position = player.position.offset(offset_x as i32, offset_y as i32);
-
-        //check if the player is heading out of bounds on the x axis and undo the position change
-        if (player.position.x - PLAYER_SPRITE_WIDTH as i32 / 2) < -(SCREEN_WIDTH as i32 / 2) || (player.position.x + PLAYER_SPRITE_WIDTH as i32 / 2) > SCREEN_WIDTH as i32 / 2{
-            player.position = player.position.offset(-offset_x as i32, 0);
-        }
-
-        //check if the player is heading out of bounds on the y axis and undo the position change
-        if (player.position.y - PLAYER_SPRITE_HEIGHT as i32 / 2) < -(SCREEN_HEIGHT as i32 / 2) || (player.position.y + PLAYER_SPRITE_HEIGHT as i32 /2) > SCREEN_HEIGHT as i32 / 2{
-            player.position = player.position.offset(0,-offset_y as i32);
-        }
 
     }
+
+    let (offset_x, offset_y) = transform_vector(velocity_x, velocity_y, player.heading);
+
+    player.position = player.position.offset(offset_x as i32, offset_y as i32);
+
+    //check if the player is heading out of bounds on the x axis and undo the position change
+    if (player.position.x - PLAYER_SPRITE_WIDTH as i32 / 2) < -(SCREEN_WIDTH as i32 / 2) || (player.position.x + PLAYER_SPRITE_WIDTH as i32 / 2) > SCREEN_WIDTH as i32 / 2{
+        player.position = player.position.offset(-offset_x as i32, 0);
+    }
+
+    //check if the player is heading out of bounds on the y axis and undo the position change
+    if (player.position.y - PLAYER_SPRITE_HEIGHT as i32 / 2) < -(SCREEN_HEIGHT as i32 / 2) || (player.position.y + PLAYER_SPRITE_HEIGHT as i32 /2) > SCREEN_HEIGHT as i32 / 2{
+        player.position = player.position.offset(0,-offset_y as i32);
+    }
+
+}
 
 //TODO:Create function that procedurally generates a background
 
@@ -157,7 +152,6 @@ fn main() -> Result<(), String> {
         position: Point::new(0,0),
         sprite: Rect::new(0,0,PLAYER_SPRITE_WIDTH,PLAYER_SPRITE_HEIGHT),
         speed: PLAYER_MOVEMENT_SPEED,
-        direction: (XAxis::Off, YAxis::Off),
         heading: 0.0,
 
     };
