@@ -12,11 +12,12 @@ use std::time::Duration;
 use std::thread;
 
 //imports from local crate
-use input::controller::XAxis;
-use input::controller::YAxis;
+use input::controller::Input::*;
+use input::controller::Input;
 use input::controller::Vector;
 use input::controller::Player;
 use input::controller::transform_vector;
+use input::controller::remove_input;
 
 //defining constants
 //dimensions and title of the window to be rendered
@@ -31,87 +32,74 @@ const PLAYER_SPRITE_HEIGHT: u32 = 150;
 const PLAYER_MOVEMENT_SPEED: u32 = 10;
 
 //TODO: Move to separate file
-    //Function to update the player's position on the screen, processes the direction component of the player passed in
-    //TODO: Update function so it moves by player velocity on the diagonals too
-    pub fn update_player(player: &mut Player){
+//Function to update the player's position on the screen, processes the direction component of the player passed in
+//TODO: Update function so it moves by player velocity on the diagonals too
+pub fn update_player(player: &mut Player, inputs: &mut Vec<Input>){
 
-        use self::XAxis::*;
-        use self::YAxis::*;
+    use self::Input::*;
 
-        //velocity vectors relative to the player's heading
-        let mut velocity_x = Vector{
+    //velocity vectors relative to the player's heading
+    let mut velocity_x = Vector{
 
-            magnitude: 0.0,
-            direction: 0.0,
+        magnitude: 0.0,
+        direction: 0.0,
 
-        };
-        let mut velocity_y = Vector{
+    };
+    let mut velocity_y = Vector{
 
-            magnitude: 0.0,
-            direction: 0.0,
+        magnitude: 0.0,
+        direction: 0.0,
 
-        };
+    };
 
-        match player.direction.0{
+    for input in inputs.iter(){
 
-            Left => {
+        match input{
 
-                velocity_x.magnitude = player.speed as f64;
-                velocity_x.direction = 90.0;
-
-            },
-            Right => {
-
-                velocity_x.magnitude = player.speed as f64;
-                velocity_x.direction = 270.0;
-
-            },
-            XAxis::Off |
-            XAxis::Both => {
-
-                velocity_x.magnitude = 0.0;
-                velocity_x.direction = 0.0;
-
-            },
-
-        };
-        match player.direction.1 {
             Up => {
 
-                velocity_y.magnitude = player.speed as f64;
+                velocity_y.magnitude += player.speed as f64;
                 velocity_y.direction = 0.0;
 
             },
             Down => {
 
-                velocity_y.magnitude = player.speed as f64;
-                velocity_y.direction = 180.0;
-
-            },
-            YAxis::Off |
-            YAxis::Both => {
-
-                velocity_y.magnitude = 0.0;
+                velocity_y.magnitude -= player.speed as f64;
                 velocity_y.direction = 0.0;
 
             },
+            Left => {
+
+                velocity_x.magnitude += player.speed as f64;
+                velocity_x.direction = 90.0;
+
+            },
+            Right => {
+
+                velocity_x.magnitude -= player.speed as f64;
+                velocity_x.direction = 90.0;
+
+            }
+
         };
 
-        let (offset_x, offset_y) = transform_vector(velocity_x, velocity_y, player.heading);
-
-        player.position = player.position.offset(offset_x as i32, offset_y as i32);
-
-        //check if the player is heading out of bounds on the x axis and undo the position change
-        if (player.position.x - PLAYER_SPRITE_WIDTH as i32 / 2) < -(SCREEN_WIDTH as i32 / 2) || (player.position.x + PLAYER_SPRITE_WIDTH as i32 / 2) > SCREEN_WIDTH as i32 / 2{
-            player.position = player.position.offset(-offset_x as i32, 0);
-        }
-
-        //check if the player is heading out of bounds on the y axis and undo the position change
-        if (player.position.y - PLAYER_SPRITE_HEIGHT as i32 / 2) < -(SCREEN_HEIGHT as i32 / 2) || (player.position.y + PLAYER_SPRITE_HEIGHT as i32 /2) > SCREEN_HEIGHT as i32 / 2{
-            player.position = player.position.offset(0,-offset_y as i32);
-        }
-
     }
+
+    let (offset_x, offset_y) = transform_vector(velocity_x, velocity_y, player.heading);
+
+    player.position = player.position.offset(offset_x as i32, offset_y as i32);
+
+    //check if the player is heading out of bounds on the x axis and undo the position change
+    if (player.position.x - PLAYER_SPRITE_WIDTH as i32 / 2) < -(SCREEN_WIDTH as i32 / 2) || (player.position.x + PLAYER_SPRITE_WIDTH as i32 / 2) > SCREEN_WIDTH as i32 / 2{
+        player.position = player.position.offset(-offset_x as i32, 0);
+    }
+
+    //check if the player is heading out of bounds on the y axis and undo the position change
+    if (player.position.y - PLAYER_SPRITE_HEIGHT as i32 / 2) < -(SCREEN_HEIGHT as i32 / 2) || (player.position.y + PLAYER_SPRITE_HEIGHT as i32 /2) > SCREEN_HEIGHT as i32 / 2{
+        player.position = player.position.offset(0,-offset_y as i32);
+    }
+
+}
 
 //TODO:Create function that procedurally generates a background
 
@@ -164,10 +152,11 @@ fn main() -> Result<(), String> {
         position: Point::new(0,0),
         sprite: Rect::new(0,0,PLAYER_SPRITE_WIDTH,PLAYER_SPRITE_HEIGHT),
         speed: PLAYER_MOVEMENT_SPEED,
-        direction: (XAxis::Off, YAxis::Off),
         heading: 0.0,
 
     };
+
+    let mut input_stack: Vec<Input> = Vec::with_capacity(4);
 
     let mut event_pump = sdl_context.event_pump()?;
 
@@ -184,60 +173,44 @@ fn main() -> Result<(), String> {
                 },
                 //Update direction enums when keys are pressed and released
                 Event::KeyDown { keycode: Some(Keycode::W), repeat: false, .. } => {
-                    if player.get_direction_y() == YAxis::Down {
-                        player.direction.1 = YAxis::Both;
-                    } else {
-                        player.direction.1 = YAxis::Up;
-                    }
+                    
+                    input_stack.push(Up);
+
                 },
                 Event::KeyDown { keycode: Some(Keycode::A), repeat: false, .. } => {
-                    if player.get_direction_x() == XAxis::Right {
-                        player.direction.0 = XAxis::Both;
-                    } else {
-                        player.direction.0 = XAxis::Left;
-                    }
+                    
+                    input_stack.push(Left);
+
                 },
                 Event::KeyDown { keycode: Some(Keycode::S), repeat: false, .. } => {
-                    if player.get_direction_y() == YAxis::Up {
-                        player.direction.1 = YAxis::Both;
-                    } else {
-                        player.direction.1 = YAxis::Down;
-                    }
+                    
+                    input_stack.push(Down)
+
                 },
                 Event::KeyDown { keycode: Some(Keycode::D), repeat: false, .. } => {
-                    if player.get_direction_x() == XAxis::Left {
-                        player.direction.0 = XAxis::Both;
-                    } else {
-                        player.direction.0 = XAxis::Right;
-                    }
+                    
+                    input_stack.push(Right);
+
                 },
                 Event::KeyUp { keycode: Some(Keycode::W), repeat: false, .. } => {
-                    if player.get_direction_y() == YAxis::Both {
-                        player.direction.1 = YAxis::Down;
-                    } else {
-                        player.direction.1 = YAxis::Off;
-                    }
+
+                    remove_input(&mut input_stack, &Up);
+                    
                 },
                 Event::KeyUp { keycode: Some(Keycode::A), repeat: false, .. } => {
-                    if player.get_direction_x() == XAxis::Both {
-                        player.direction.0 = XAxis::Right;
-                    } else {
-                        player.direction.0 = XAxis::Off;
-                    }
+                    
+                    remove_input(&mut input_stack, &Left);
+
                 },
                 Event::KeyUp { keycode: Some(Keycode::S), repeat: false, .. } => {
-                    if player.get_direction_y() == YAxis::Both {
-                        player.direction.1 = YAxis::Up;
-                    } else {
-                        player.direction.1 = YAxis::Off;
-                    }
+                    
+                    remove_input(&mut input_stack, &Down);
+
                 },
                 Event::KeyUp { keycode: Some(Keycode::D), repeat: false, .. } => {
-                    if player.get_direction_x() == XAxis::Both {
-                        player.direction.0 = XAxis::Left;
-                    } else {
-                        player.direction.0 = XAxis::Off;
-                    }//FIXME: This can be implemented better by storing inputs in a stack (VecDeque) and processing that in update_player
+                    
+                    remove_input(&mut input_stack, &Right);
+
                 },
                 _ => {}
 
@@ -246,7 +219,7 @@ fn main() -> Result<(), String> {
         }
 
     //Update
-    update_player(&mut player);
+    update_player(&mut player, &mut input_stack);
 
     //draw to screen
     render(&mut canvas, Color::RGB(0,0,0), &texture, &player)?;
