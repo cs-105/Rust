@@ -14,9 +14,8 @@ use std::thread;
 //imports from local crate
 use input::controller::Input::*;
 use input::controller::Input;
-use input::controller::Vector;
 use input::controller::Player;
-use input::controller::transform_vector;
+use input::controller::create_player;
 use input::controller::remove_input;
 
 //defining constants
@@ -31,84 +30,11 @@ const PLAYER_SPRITE_HEIGHT: u32 = 150;
 
 const PLAYER_MOVEMENT_SPEED: u32 = 10;
 
-//TODO: Move to separate file
-//Function to update the player's position on the screen, processes the direction component of the player passed in
-//TODO: Update function so it moves by player velocity on the diagonals too
-pub fn update_player(player: &mut Player, inputs: &mut Vec<Input>){
-
-    use self::Input::*;
-
-    //velocity vectors relative to the player's heading
-    let mut velocity_x = Vector{
-
-        magnitude: 0.0,
-        direction: 0.0,
-
-    };
-    let mut velocity_y = Vector{
-
-        magnitude: 0.0,
-        direction: 0.0,
-
-    };
-
-    for input in inputs.iter(){
-
-        match input{
-
-            Up => {
-
-                velocity_y.magnitude += player.speed as f64;
-                velocity_y.direction = 0.0;
-
-            },
-            Down => {
-
-                velocity_y.magnitude -= player.speed as f64;
-                velocity_y.direction = 0.0;
-
-            },
-            Left => {
-
-                velocity_x.magnitude += player.speed as f64;
-                velocity_x.direction = 90.0;
-
-            },
-            Right => {
-
-                velocity_x.magnitude -= player.speed as f64;
-                velocity_x.direction = 90.0;
-
-            }
-
-        };
-
-    }
-
-    let (offset_x, offset_y) = transform_vector(velocity_x, velocity_y, player.heading);
-
-    player.position = player.position.offset(offset_x as i32, offset_y as i32);
-
-    //check if the player is heading out of bounds on the x axis and undo the position change
-    if (player.position.x - PLAYER_SPRITE_WIDTH as i32 / 2) < -(SCREEN_WIDTH as i32 / 2) || (player.position.x + PLAYER_SPRITE_WIDTH as i32 / 2) > SCREEN_WIDTH as i32 / 2{
-        player.position = player.position.offset(-offset_x as i32, 0);
-    }
-
-    //check if the player is heading out of bounds on the y axis and undo the position change
-    if (player.position.y - PLAYER_SPRITE_HEIGHT as i32 / 2) < -(SCREEN_HEIGHT as i32 / 2) || (player.position.y + PLAYER_SPRITE_HEIGHT as i32 /2) > SCREEN_HEIGHT as i32 / 2{
-        player.position = player.position.offset(0,-offset_y as i32);
-    }
-
-}
-
-//TODO:Create function that procedurally generates a background
-
-//update the canvas that is passed in, handles drawing the player sprite into the new position
 fn render(
     canvas: &mut WindowCanvas,
     color: Color,
     texture: &Texture,
-    player: &Player,
+    player: &mut Player,
 ) -> Result<(), String> {
 
     canvas.set_draw_color(color);
@@ -116,10 +42,10 @@ fn render(
 
     let (width, height) = canvas.output_size()?;
 
-    let screen_position = player.position + Point::new(width as i32 / 2, height as i32 / 2);
-    let screen_rect = Rect::from_center(screen_position, player.sprite.width(), player.sprite.height());
+    let screen_position = player.get_position() + Point::new(width as i32 / 2, height as i32 / 2);
+    let screen_rect = Rect::from_center(screen_position, player.get_sprite().width(), player.get_sprite().height());
 
-    canvas.copy(texture, player.sprite, screen_rect)?;
+    canvas.copy(texture, player.get_sprite(), screen_rect)?;
 
     canvas.present();
 
@@ -147,14 +73,7 @@ fn main() -> Result<(), String> {
     let texture_creator = canvas.texture_creator();
     let texture = texture_creator.load_texture("assets/ship.png")?;
 
-    let mut player = Player{
-
-        position: Point::new(0,0),
-        sprite: Rect::new(0,0,PLAYER_SPRITE_WIDTH,PLAYER_SPRITE_HEIGHT),
-        speed: PLAYER_MOVEMENT_SPEED,
-        heading: 0.0,
-
-    };
+    let mut player = create_player(Point::new(0,0), Rect::new(0,0,PLAYER_SPRITE_WIDTH,PLAYER_SPRITE_HEIGHT), PLAYER_MOVEMENT_SPEED, 0.0);
 
     let mut input_stack: Vec<Input> = Vec::with_capacity(4);
 
@@ -219,12 +138,12 @@ fn main() -> Result<(), String> {
         }
 
     //Update
-    update_player(&mut player, &mut input_stack);
+    player.update_player(&mut input_stack);
 
     //draw to screen
-    render(&mut canvas, Color::RGB(0,0,0), &texture, &player)?;
+    render(&mut canvas, Color::RGB(0,0,0), &texture, &mut player)?;
 
-    //Lmimt to 60 fps
+    //Lmimt to 144 fps
     thread::sleep(Duration::new(0, 1_000_000_000u32 / 144));
 
     }
