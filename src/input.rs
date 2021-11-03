@@ -4,6 +4,10 @@ pub mod controller{
 
 	use sdl2::rect::{Rect, Point};
 
+	use crate::SCREEN_WIDTH;
+	use crate::SCREEN_HEIGHT;
+
+	//enum that defines the different directions the player can move in
 	#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 	pub enum Input{
 
@@ -14,7 +18,6 @@ pub mod controller{
 
 	}
 
-	//TODO: Move to separate file
 	//Physics vector, mainly used for storing velocity
 	#[derive(Debug, Clone, Copy)]
 	pub struct Vector{
@@ -24,25 +27,114 @@ pub mod controller{
 
 	}
 
-	//TODO: Move to separate file
 	//Player Struct keeps track of data about the player avatar
 	#[derive(Debug)]
 	pub struct Player{
 
-	    pub position: Point, //2-D Cartesian Point 
-	    pub sprite: Rect, //Dimensions are used to select what to render from the spritesheet
-	    pub speed: u32, //Rate at which the player sprite is moved
-	    pub heading: f64, //Heading of the player
+	    position: Point, //2-D Cartesian Point 
+	    sprite: Rect, //Dimensions are used to select what to render from the spritesheet
+	 	speed: u32, //Rate at which the player sprite is moved
+	    heading: f64, //Heading of the player
+
+	}
+
+	pub fn create_player(position: Point, sprite: Rect, speed: u32, heading: f64) -> Player{
+
+		Player {
+
+			position,
+			sprite,
+			speed,
+			heading,
+
+		}
 
 	}
 
 	impl Player{
 
+		//getters
+		pub fn get_position(&mut self) -> Point {self.position}
+		pub fn get_sprite(&mut self) -> Rect {self.sprite}
+		pub fn get_speed(&mut self) -> u32 {self.speed}
+		pub fn get_heading(&mut self) -> f64 {self.heading}
 
+		//setters
+		pub fn set_position(&mut self, new_position: Point) {self.position = new_position}
+		pub fn set_sprite(&mut self, new_sprite: Rect) {self.sprite = new_sprite}
+		pub fn set_speed(&mut self, new_speed: u32) {self.speed = new_speed}
+		pub fn set_heading(&mut self, new_heading: f64) {self.heading = new_heading}
+
+		//functions
+		pub fn update_player(&mut self, inputs: &mut Vec<Input>){
+
+			use Input::*;
+
+		    //velocity vectors relative to the player's heading
+		    let mut velocity_x = Vector{
+
+		        magnitude: 0.0,
+		        direction: 0.0,
+
+		    };
+		    let mut velocity_y = Vector{
+
+		        magnitude: 0.0,
+		        direction: 0.0,
+
+		    };
+
+		    for input in inputs.iter(){
+
+		        match input{
+
+		            Up => {
+
+		                velocity_y.magnitude += self.speed as f64;
+		                velocity_y.direction = 0.0;
+
+		            },
+		            Down => {
+
+		                velocity_y.magnitude -= self.speed as f64;
+		                velocity_y.direction = 0.0;
+
+		            },
+		            Left => {
+
+		                velocity_x.magnitude += self.speed as f64;
+		                velocity_x.direction = 90.0;
+
+		            },
+		            Right => {
+
+		                velocity_x.magnitude -= self.speed as f64;
+		                velocity_x.direction = 90.0;
+
+		            }
+
+		        };
+
+		    }
+
+		    let (offset_x, offset_y) = transform_vector(velocity_x, velocity_y, self.heading);
+
+		    self.position = self.position.offset(offset_x as i32, offset_y as i32);
+
+		    //check if the player is heading out of bounds on the x axis and undo the position change
+		    if (self.position.x - self.sprite.width() as i32 / 2) < -(SCREEN_WIDTH as i32 / 2) || (self.position.x + self.sprite.width() as i32 / 2) > SCREEN_WIDTH as i32 / 2{
+		        self.position = self.position.offset(-offset_x as i32, 0);
+		    }
+
+		    //check if the player is heading out of bounds on the y axis and undo the position change
+		    if (self.position.y - self.sprite.height() as i32 / 2) < -(SCREEN_HEIGHT as i32 / 2) || (self.position.y + self.sprite.height() as i32 /2) > SCREEN_HEIGHT as i32 / 2{
+		        self.position = self.position.offset(0,-offset_y as i32);
+		    }
+
+		}
 
 	}
 	
-	//TODO: Move to separate file
 	//gets x and y components of a vector
 	fn get_components(vector: Vector) -> (f64, f64){
 
@@ -53,9 +145,8 @@ pub mod controller{
 
 	}
 
-	//TODO: Move to separate file
 	//Transforms the x and y velocty vectors into coordinates to offset
-	pub fn transform_vector(velocity_x: Vector, velocity_y: Vector, heading: f64) -> (f64, f64){
+	fn transform_vector(velocity_x: Vector, velocity_y: Vector, heading: f64) -> (f64, f64){
 
 	    //vectors transformed to match the unit circle
 	    let transformed_x = Vector{
@@ -78,6 +169,7 @@ pub mod controller{
 
 	}
 
+	//searches the input stack and removes the specified input
 	pub fn remove_input(input_stack: &mut Vec<Input>, remove: &Input){
 
 		for i in 0..input_stack.len(){
