@@ -6,7 +6,7 @@ use rodio::{Decoder, OutputStream, source::Source};
 let (_stream, stream_handle) = OutputStream::try_default().unwrap();
 
 // Open Music File
-let file = BufReader::new(File::open("examples/music.ogg").unwrap());
+let file = BufReader::new(File::open("music_files/sample.ogg").unwrap());
 
 // Decode the Music File
 let source = Decoder::new(file).unwrap();
