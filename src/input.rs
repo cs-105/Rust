@@ -15,6 +15,8 @@ pub mod controller{
 		Down,
 		Left,
 		Right,
+		RotateLeft,
+		RotateRight,
 
 	}
 
@@ -34,18 +36,20 @@ pub mod controller{
 	    position: Point, //2-D Cartesian Point 
 	    sprite: Rect, //Dimensions are used to select what to render from the spritesheet
 	 	speed: u32, //Rate at which the player sprite is moved
+	 	rotation_speed: u32, //Rate at which the player sprite is rotated
 	    heading: f64, //Heading of the player
 
 	}
 
 	//Player constructor
-	pub fn create_player(position: Point, sprite: Rect, speed: u32, heading: f64) -> Player{
+	pub fn create_player(position: Point, sprite: Rect, speed: u32, rotation_speed: u32, heading: f64) -> Player{
 
 		Player {
 
 			position,
 			sprite,
 			speed,
+			rotation_speed,
 			heading: normalize_heading(heading),
 
 		}
@@ -59,12 +63,14 @@ pub mod controller{
 		pub fn get_position(&mut self) -> Point {self.position}
 		pub fn get_sprite(&mut self) -> Rect {self.sprite}
 		pub fn get_speed(&mut self) -> u32 {self.speed}
+		pub fn get_rotation_speed(&mut self) -> u32 {self.rotation_speed}
 		pub fn get_heading(&mut self) -> f64 {self.heading}
 
 		//setters
 		pub fn set_position(&mut self, new_position: Point) {self.position = new_position}
 		pub fn set_sprite(&mut self, new_sprite: Rect) {self.sprite = new_sprite}
 		pub fn set_speed(&mut self, new_speed: u32) {self.speed = new_speed}
+		pub fn set_rotation_speed(&mut self, new_speed: u32) {self.rotation_speed = new_speed}
 		pub fn set_heading(&mut self, new_heading: f64) {self.heading = new_heading}
 
 		//functions
@@ -113,7 +119,17 @@ pub mod controller{
 		                velocity_x.magnitude = self.speed as f64;
 		                velocity_x.direction = 270.0;
 
-		            }
+		            },
+		            RotateRight => {
+
+		            	self.heading = normalize_heading(self.heading + self.rotation_speed as f64);
+
+		            },
+		          	RotateLeft => {
+
+		            	self.heading = normalize_heading(self.heading - self.rotation_speed as f64);
+
+		            },
 
 		        };
 

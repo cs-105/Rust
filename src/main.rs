@@ -29,6 +29,7 @@ const PLAYER_SPRITE_WIDTH: u32 = 150;
 const PLAYER_SPRITE_HEIGHT: u32 = 150;
 
 const PLAYER_MOVEMENT_SPEED: u32 = 5;
+const PLAYER_ROTATION_SPEED: u32 = 5;
 
 fn render(
     canvas: &mut WindowCanvas,
@@ -73,9 +74,9 @@ fn main() -> Result<(), String> {
     let texture_creator = canvas.texture_creator();
     let texture = texture_creator.load_texture("assets/ship.png")?;
 
-    let mut player = create_player(Point::new(0,0), Rect::new(0,0,PLAYER_SPRITE_WIDTH,PLAYER_SPRITE_HEIGHT), PLAYER_MOVEMENT_SPEED, -90.0);
+    let mut player = create_player(Point::new(0,0), Rect::new(0,0,PLAYER_SPRITE_WIDTH,PLAYER_SPRITE_HEIGHT), PLAYER_MOVEMENT_SPEED, PLAYER_ROTATION_SPEED, -90.0);
 
-    let mut input_stack: Vec<Input> = Vec::with_capacity(4);
+    let mut input_stack: Vec<Input> = Vec::with_capacity(6);
 
     let mut event_pump = sdl_context.event_pump()?;
 
@@ -111,6 +112,16 @@ fn main() -> Result<(), String> {
                     input_stack.push(Right);
 
                 },
+                Event::KeyDown { keycode: Some(Keycode::E), repeat: false, .. } => {
+                    
+                    input_stack.push(RotateRight);
+
+                },
+                Event::KeyDown { keycode: Some(Keycode::Q), repeat: false, .. } => {
+                    
+                    input_stack.push(RotateLeft);
+
+                },
                 Event::KeyUp { keycode: Some(Keycode::W), repeat: false, .. } => {
 
                     remove_input(&mut input_stack, &Up);
@@ -129,6 +140,15 @@ fn main() -> Result<(), String> {
                 Event::KeyUp { keycode: Some(Keycode::D), repeat: false, .. } => {
                     
                     remove_input(&mut input_stack, &Right);
+
+                },Event::KeyUp { keycode: Some(Keycode::E), repeat: false, .. } => {
+                    
+                    remove_input(&mut input_stack, &RotateRight);
+
+                },
+                Event::KeyUp { keycode: Some(Keycode::Q), repeat: false, .. } => {
+                    
+                    remove_input(&mut input_stack, &RotateLeft);
 
                 },
                 _ => {}
