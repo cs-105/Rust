@@ -121,7 +121,7 @@ pub mod controller{
 
 		    let (offset_x, offset_y) = transform_vector(velocity_x, velocity_y, self.heading);
 
-		    println!("({}, {})", offset_x.trunc() as i32, offset_y.trunc() as i32);
+		    //println!("({}, {})", offset_x.trunc() as i32, offset_y.trunc() as i32);
 
 		    self.position = self.position.offset(offset_x.trunc() as i32, offset_y.trunc() as i32);
 
@@ -195,16 +195,6 @@ pub mod controller{
 			}
 
 		}
-
-	}
-
-	pub fn round_float(mut inaccurate: f64) -> f64{
-
-		inaccurate = inaccurate * 1000000000.0;
-		inaccurate.round();
-		inaccurate = inaccurate / 1000000000.0;
-
-		return inaccurate;
 
 	}
 
