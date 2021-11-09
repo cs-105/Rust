@@ -46,7 +46,7 @@ pub mod controller{
 			position,
 			sprite,
 			speed,
-			heading,
+			heading: normalize_heading(heading),
 
 		}
 
@@ -170,6 +170,15 @@ pub mod controller{
 	    let offset_y = get_components(transformed_x).1 + get_components(transformed_y).1;
 
 	    (offset_x, -offset_y)
+
+	}
+
+	//normalizes heading to be clamped between -180.0 and 180.0 in order to prevent heading from getting too large and causing floating point math errors
+	fn normalize_heading(heading: f64) -> f64{
+
+		if heading >= 180.0{return heading - 360.0}
+		else if heading <= -180.0 {return heading + 360.0}
+		else {return heading}
 
 	}
 
