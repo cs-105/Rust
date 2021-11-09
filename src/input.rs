@@ -38,6 +38,7 @@ pub mod controller{
 
 	}
 
+	//Player constructor
 	pub fn create_player(position: Point, sprite: Rect, speed: u32, heading: f64) -> Player{
 
 		Player {
@@ -51,6 +52,7 @@ pub mod controller{
 
 	}
 
+	//Player functions
 	impl Player{
 
 		//getters
@@ -90,26 +92,26 @@ pub mod controller{
 
 		            Up => {
 
-		                velocity_y.magnitude += self.speed as f64;
+		                velocity_y.magnitude = self.speed as f64;
 		                velocity_y.direction = 0.0;
 
 		            },
 		            Down => {
 
-		                velocity_y.magnitude -= self.speed as f64;
-		                velocity_y.direction = 0.0;
+		                velocity_y.magnitude = self.speed as f64;
+		                velocity_y.direction = 180.0;
 
 		            },
 		            Left => {
 
-		                velocity_x.magnitude += self.speed as f64;
+		                velocity_x.magnitude = self.speed as f64;
 		                velocity_x.direction = 90.0;
 
 		            },
 		            Right => {
 
-		                velocity_x.magnitude -= self.speed as f64;
-		                velocity_x.direction = 90.0;
+		                velocity_x.magnitude = self.speed as f64;
+		                velocity_x.direction = 270.0;
 
 		            }
 
@@ -119,7 +121,9 @@ pub mod controller{
 
 		    let (offset_x, offset_y) = transform_vector(velocity_x, velocity_y, self.heading);
 
-		    self.position = self.position.offset(offset_x as i32, offset_y as i32);
+		    println!("({}, {})", offset_x.trunc() as i32, offset_y.trunc() as i32);
+
+		    self.position = self.position.offset(offset_x.trunc() as i32, offset_y.trunc() as i32);
 
 		    //check if the player is heading out of bounds on the x axis and undo the position change
 		    if (self.position.x - self.sprite.width() as i32 / 2) < -(SCREEN_WIDTH as i32 / 2) || (self.position.x + self.sprite.width() as i32 / 2) > SCREEN_WIDTH as i32 / 2{
@@ -152,13 +156,13 @@ pub mod controller{
 	    let transformed_x = Vector{
 
 	        magnitude: velocity_x.magnitude,
-	        direction: heading + 90.0 + velocity_x.direction,
+	        direction: -heading + velocity_x.direction,
 
 	    };
 	    let transformed_y = Vector{
 
 	        magnitude: velocity_y.magnitude,
-	        direction: heading + 90.0 + velocity_y.direction,
+	        direction: -heading + velocity_y.direction,
 
 	    };
 
@@ -182,6 +186,16 @@ pub mod controller{
 			}
 
 		}
+
+	}
+
+	pub fn round_float(mut inaccurate: f64) -> f64{
+
+		inaccurate = inaccurate * 1000000000.0;
+		inaccurate.round();
+		inaccurate = inaccurate / 1000000000.0;
+
+		return inaccurate;
 
 	}
 

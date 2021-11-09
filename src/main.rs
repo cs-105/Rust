@@ -28,7 +28,7 @@ const WINDOW_TITLE: &str = "The Game";
 const PLAYER_SPRITE_WIDTH: u32 = 150;
 const PLAYER_SPRITE_HEIGHT: u32 = 150;
 
-const PLAYER_MOVEMENT_SPEED: u32 = 10;
+const PLAYER_MOVEMENT_SPEED: u32 = 5;
 
 fn render(
     canvas: &mut WindowCanvas,
@@ -45,10 +45,10 @@ fn render(
     let screen_position = player.get_position() + Point::new(width as i32 / 2, height as i32 / 2);
     let screen_rect = Rect::from_center(screen_position, player.get_sprite().width(), player.get_sprite().height());
 
-    canvas.copy(texture, player.get_sprite(), screen_rect)?;
+    canvas.copy_ex(texture, player.get_sprite(), screen_rect, player.get_heading(), None, false, false)?;
 
     canvas.present();
-
+    
     Ok(())
 
 }
@@ -73,7 +73,7 @@ fn main() -> Result<(), String> {
     let texture_creator = canvas.texture_creator();
     let texture = texture_creator.load_texture("assets/ship.png")?;
 
-    let mut player = create_player(Point::new(0,0), Rect::new(0,0,PLAYER_SPRITE_WIDTH,PLAYER_SPRITE_HEIGHT), PLAYER_MOVEMENT_SPEED, 0.0);
+    let mut player = create_player(Point::new(0,0), Rect::new(0,0,PLAYER_SPRITE_WIDTH,PLAYER_SPRITE_HEIGHT), PLAYER_MOVEMENT_SPEED, -90.0);
 
     let mut input_stack: Vec<Input> = Vec::with_capacity(4);
 
@@ -144,7 +144,7 @@ fn main() -> Result<(), String> {
     render(&mut canvas, Color::RGB(0,0,0), &texture, &mut player)?;
 
     //Lmimt to 144 fps
-    thread::sleep(Duration::new(0, 1_000_000_000u32 / 144));
+    thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
 
     }
 
