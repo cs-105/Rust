@@ -1,4 +1,7 @@
 mod input;
+mod music{
+    pub fn main2(){}
+}
 
 extern crate sdl2;
 
@@ -82,6 +85,15 @@ fn main() -> Result<(), String> {
 
     //game loop
     'running: loop{
+
+        //MUSIC STARTS HERE
+        pub fn start_music(){
+            pub fn main2(){
+                music::main2();
+                std::thread::sleep(std::time::Duration::from_secs(5));
+            }
+        }
+        
 
         for event in event_pump.poll_iter(){
             //handling input
