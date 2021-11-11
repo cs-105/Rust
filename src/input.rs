@@ -29,6 +29,35 @@ pub mod controller{
 
 	}
 
+	//GameObject Struct defines characterstics of non player objects
+	#[derive(Debug)]
+	pub struct GameObject{
+
+		position: Point, //2-D Cartesian Point
+		sprite: Rect, //Dimensions for selecting image from spritesheet
+		velocity: Vector, //Velocity vector
+
+
+	}
+
+	impl GameObject{
+
+		//getters
+		pub fn get_position(&mut self) -> Point {self.position}
+		pub fn get_sprite(&mut self) -> Rect {self.sprite}
+		pub fn get_speed(&mut self) -> f64 {self.velocity.magnitude}
+		pub fn get_heading(&mut self) -> f64 {self.velocity.direction}
+		pub fn get_velocity(&mut self) -> Vector {self.velocity}
+
+		//setters
+		pub fn set_position(&mut self, new_position: Point){self.position = new_position}
+		pub fn set_sprite(&mut self, new_sprite: Rect){self.sprite = new_sprite}
+		pub fn set_speed(&mut self, new_speed: f64){self.velocity.magnitude = new_speed}
+		pub fn set_heading(&mut self, new_heading: f64){self.velocity.direction = new_heading}
+		pub fn set_velocity(&mut self, new_velocity: Vector){self.velocity = new_velocity}
+
+	}
+
 	//Player Struct keeps track of data about the player avatar
 	#[derive(Debug)]
 	pub struct Player{
