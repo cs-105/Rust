@@ -20,16 +20,16 @@ use input::controller::remove_input;
 
 //defining constants
 //dimensions and title of the window to be rendered
-const SCREEN_WIDTH: u32 = 1920;
-const SCREEN_HEIGHT: u32 = 1080;
+const SCREEN_WIDTH: u32 = 1920; //Width in pixels
+const SCREEN_HEIGHT: u32 = 1080; //Height in pixels
 const WINDOW_TITLE: &str = "The Game";
 
 //dimensions of the player sprite
-const PLAYER_SPRITE_WIDTH: u32 = 150;
-const PLAYER_SPRITE_HEIGHT: u32 = 150;
+const PLAYER_SPRITE_WIDTH: u32 = 150; //Width in pixels
+const PLAYER_SPRITE_HEIGHT: u32 = 150; //Height in pixels
 
-const PLAYER_MOVEMENT_SPEED: u32 = 5;
-const PLAYER_ROTATION_SPEED: u32 = 5;
+const PLAYER_MOVEMENT_SPEED: u32 = 5; //Speed in pixels per second
+const PLAYER_ROTATION_SPEED: u32 = 5; //Rotation speed in degrees per second
 
 fn render(
     canvas: &mut WindowCanvas,

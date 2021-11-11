@@ -189,7 +189,7 @@ pub mod controller{
 
 	}
 
-	//normalizes heading to be clamped between -180.0 and 180.0 in order to prevent heading from getting too large and causing floating point math errors
+	//normalizes heading to wrap around between -180.0 and 180.0 in order to prevent heading from getting too large and causing floating point math errors
 	fn normalize_heading(heading: f64) -> f64{
 
 		if heading >= 180.0{return heading - 360.0}
