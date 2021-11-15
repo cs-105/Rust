@@ -105,7 +105,7 @@ fn main() -> Result<(), String> {
         
         }
 
-        music();
+        
 
 
 
@@ -113,12 +113,13 @@ fn main() -> Result<(), String> {
     //game loop
     'running: loop{
 
-        
+        music();
         
         
         
 
         for event in event_pump.poll_iter(){
+            
             //handling input
             match event{
                 //Quit logic
