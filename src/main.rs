@@ -1,7 +1,8 @@
 mod input;
-mod music{
-    pub fn main2(){}
-}
+
+use std::fs::File;
+use std::io::BufReader;
+use rodio::{Decoder, OutputStream, source::Source};
 
 extern crate sdl2;
 
@@ -83,16 +84,38 @@ fn main() -> Result<(), String> {
 
     let mut event_pump = sdl_context.event_pump()?;
 
+
+
+    //MUSIC STARTS HERE for now
+
+    fn music(){
+
+        // Make Stream Handle
+        let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+        
+        // Open Music File
+        let file = BufReader::new(File::open("assets/Sample.ogg").unwrap());
+        
+        let source = Decoder::new(file).unwrap();
+        
+        // Decode the Music File
+        let music_play = stream_handle.play_raw(source.convert_samples());
+        
+        std::thread::sleep(std::time::Duration::from_secs(5));
+        
+        }
+
+        music();
+
+
+
+
     //game loop
     'running: loop{
 
-        //MUSIC STARTS HERE
-        pub fn start_music(){
-            pub fn main2(){
-                music::main2();
-                std::thread::sleep(std::time::Duration::from_secs(5));
-            }
-        }
+        
+        
+        
         
 
         for event in event_pump.poll_iter(){
