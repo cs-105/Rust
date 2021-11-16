@@ -4,7 +4,7 @@ extern crate sdl2;
 
 use sdl2::pixels::Color;
 use sdl2::event::Event;
-use sdl2::keyboard::Keycode;
+use sdl2::keyboard::{Scancode, PressedScancodeIterator};
 use sdl2::render::{WindowCanvas, Texture};
 use sdl2::rect::{Rect, Point};
 use sdl2::image::{self, LoadTexture, InitFlag};
@@ -12,11 +12,7 @@ use std::time::Duration;
 use std::thread;
 
 //imports from local crate
-use input::controller::Input::*;
-use input::controller::Input;
-use input::controller::Player;
-use input::controller::create_player;
-use input::controller::remove_input;
+use input::controller::{Input::*, Input, Player, create_player, remove_input};
 
 //defining constants
 //dimensions and title of the window to be rendered
@@ -28,14 +24,14 @@ const WINDOW_TITLE: &str = "The Game";
 const PLAYER_SPRITE_WIDTH: u32 = 150; //Width in pixels
 const PLAYER_SPRITE_HEIGHT: u32 = 150; //Height in pixels
 
-const PLAYER_MOVEMENT_SPEED: u32 = 5; //Speed in pixels per second
-const PLAYER_ROTATION_SPEED: u32 = 5; //Rotation speed in degrees per second
+const PLAYER_MOVEMENT_SPEED: f64 = 5.0; //Speed in pixels per second
+const PLAYER_ROTATION_SPEED: f64 = 5.0; //Rotation speed in degrees per second
 
 fn render(
     canvas: &mut WindowCanvas,
     color: Color,
     texture: &Texture,
-    player: &mut Player,
+    player: &mut Player<'static>,
 ) -> Result<(), String> {
 
     canvas.set_draw_color(color);
@@ -74,9 +70,9 @@ fn main() -> Result<(), String> {
     let texture_creator = canvas.texture_creator();
     let texture = texture_creator.load_texture("assets/ship.png")?;
 
-    let mut player = create_player(Point::new(0,0), Rect::new(0,0,PLAYER_SPRITE_WIDTH,PLAYER_SPRITE_HEIGHT), PLAYER_MOVEMENT_SPEED, PLAYER_ROTATION_SPEED, -90.0);
+    let mut player = create_player(Point::new(0,0), Rect::new(0,0,PLAYER_SPRITE_WIDTH,PLAYER_SPRITE_HEIGHT), PLAYER_MOVEMENT_SPEED, texture, PLAYER_ROTATION_SPEED, -90.0);
 
-    let mut input_stack: Vec<Input> = Vec::with_capacity(6);
+    let mut input_stack: Vec<Scancode> = Vec::with_capacity(241);
 
     let mut event_pump = sdl_context.event_pump()?;
 
@@ -85,80 +81,82 @@ fn main() -> Result<(), String> {
 
         for event in event_pump.poll_iter(){
             //handling input
-            match event{
-                //Quit logic
-                Event::Quit {..} |
-                Event::KeyDown { keycode: Some(Keycode::Escape), ..} => {
-                    break 'running;
-                },
-                //Update direction enums when keys are pressed and released
-                Event::KeyDown { keycode: Some(Keycode::W), repeat: false, .. } => {
+            // match event{
+            //     //Quit logic
+            //     Event::Quit {..} |
+            //     Event::KeyDown { keycode: Some(Keycode::Escape), ..} => {
+            //         break 'running;
+            //     },
+            //     //Update direction enums when keys are pressed and released
+            //     Event::KeyDown { keycode: Some(Keycode::W), repeat: false, .. } => {
                     
-                    input_stack.push(Up);
+            //         input_stack.push(Up);
 
-                },
-                Event::KeyDown { keycode: Some(Keycode::A), repeat: false, .. } => {
+            //     },
+            //     Event::KeyDown { keycode: Some(Keycode::A), repeat: false, .. } => {
                     
-                    input_stack.push(Left);
+            //         input_stack.push(Left);
 
-                },
-                Event::KeyDown { keycode: Some(Keycode::S), repeat: false, .. } => {
+            //     },
+            //     Event::KeyDown { keycode: Some(Keycode::S), repeat: false, .. } => {
                     
-                    input_stack.push(Down)
+            //         input_stack.push(Down)
 
-                },
-                Event::KeyDown { keycode: Some(Keycode::D), repeat: false, .. } => {
+            //     },
+            //     Event::KeyDown { keycode: Some(Keycode::D), repeat: false, .. } => {
                     
-                    input_stack.push(Right);
+            //         input_stack.push(Right);
 
-                },
-                Event::KeyDown { keycode: Some(Keycode::E), repeat: false, .. } => {
+            //     },
+            //     Event::KeyDown { keycode: Some(Keycode::E), repeat: false, .. } => {
                     
-                    input_stack.push(RotateRight);
+            //         input_stack.push(RotateRight);
 
-                },
-                Event::KeyDown { keycode: Some(Keycode::Q), repeat: false, .. } => {
+            //     },
+            //     Event::KeyDown { keycode: Some(Keycode::Q), repeat: false, .. } => {
                     
-                    input_stack.push(RotateLeft);
+            //         input_stack.push(RotateLeft);
 
-                },
-                Event::KeyUp { keycode: Some(Keycode::W), repeat: false, .. } => {
+            //     },
+            //     Event::KeyUp { keycode: Some(Keycode::W), repeat: false, .. } => {
 
-                    remove_input(&mut input_stack, &Up);
+            //         remove_input(&mut input_stack, &Up);
                     
-                },
-                Event::KeyUp { keycode: Some(Keycode::A), repeat: false, .. } => {
+            //     },
+            //     Event::KeyUp { keycode: Some(Keycode::A), repeat: false, .. } => {
                     
-                    remove_input(&mut input_stack, &Left);
+            //         remove_input(&mut input_stack, &Left);
 
-                },
-                Event::KeyUp { keycode: Some(Keycode::S), repeat: false, .. } => {
+            //     },
+            //     Event::KeyUp { keycode: Some(Keycode::S), repeat: false, .. } => {
                     
-                    remove_input(&mut input_stack, &Down);
+            //         remove_input(&mut input_stack, &Down);
 
-                },
-                Event::KeyUp { keycode: Some(Keycode::D), repeat: false, .. } => {
+            //     },
+            //     Event::KeyUp { keycode: Some(Keycode::D), repeat: false, .. } => {
                     
-                    remove_input(&mut input_stack, &Right);
+            //         remove_input(&mut input_stack, &Right);
 
-                },Event::KeyUp { keycode: Some(Keycode::E), repeat: false, .. } => {
+            //     },Event::KeyUp { keycode: Some(Keycode::E), repeat: false, .. } => {
                     
-                    remove_input(&mut input_stack, &RotateRight);
+            //         remove_input(&mut input_stack, &RotateRight);
 
-                },
-                Event::KeyUp { keycode: Some(Keycode::Q), repeat: false, .. } => {
+            //     },
+            //     Event::KeyUp { keycode: Some(Keycode::Q), repeat: false, .. } => {
                     
-                    remove_input(&mut input_stack, &RotateLeft);
+            //         remove_input(&mut input_stack, &RotateLeft);
 
-                },
-                _ => {}
+            //     },
+            //     _ => {}
 
-            }
+            // }
 
         }
 
+
+
     //Update
-    player.update_player(&mut input_stack);
+    player.update(&mut input_stack);
 
     //draw to screen
     render(&mut canvas, Color::RGB(0,0,0), &texture, &mut player)?;
