@@ -1,18 +1,29 @@
-mod input;
+mod graphics;
 
 extern crate sdl2;
 
 use sdl2::event::Event;
-use sdl2::image::{self, InitFlag, LoadTexture};
+use std::collections::HashMap;
+
+use sdl2::image::{self, InitFlag};
 use sdl2::keyboard::{PressedScancodeIterator, Scancode};
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
-use sdl2::render::{Texture, WindowCanvas};
+use sdl2::render::Canvas;
+use sdl2::render::{Texture, TextureCreator, WindowCanvas};
+use sdl2::video::WindowContext;
+use std::rc::Rc;
 use std::thread;
 use std::time::Duration;
 
+use graphics::graphics::Graphics;
+
+// use game_object::game_object::Renderable;
+
+// use player::player::Player;
+
 //imports from local crate
-// use input::controller::{create_player, remove_input, Input, Input::*, Player};
+// use input::controller::{ , remove_input, Input, Input::*, Player};
 
 //defining constants
 //dimensions and title of the window to be rendered
@@ -27,38 +38,33 @@ const PLAYER_SPRITE_HEIGHT: u32 = 150; //Height in pixels
 const PLAYER_MOVEMENT_SPEED: f64 = 5.0; //Speed in pixels per second
 const PLAYER_ROTATION_SPEED: f64 = 5.0; //Rotation speed in degrees per second
 
-fn render(
-    canvas: &mut WindowCanvas,
-    color: Color,
-    texture: &Texture,
-    // player: &mut Player<'static>,
-) -> Result<(), String> {
-    canvas.set_draw_color(color);
-    canvas.clear();
+// fn render(graphics: &mut Graphics) -> Result<(), String> {
+//     graphics.canvas.set_draw_color(Color::RGB(0, 0, 0));
+//     graphics.canvas.clear();
 
-    let (width, height) = canvas.output_size()?;
+//     let player = Player::new(&mut graphics);
 
-    // let screen_position = player.get_position() + Point::new(width as i32 / 2, height as i32 / 2);
-    // let screen_rect = Rect::from_center(
-    //     screen_position,
-    //     player.get_sprite().width(),
-    //     player.get_sprite().height(),
-    // );
+//     // let screen_position = player.get_position() + Point::new(width as i32 / 2, height as i32 / 2);
+//     // let screen_rect = Rect::from_center(
+//     //     screen_position,
+//     //     player.get_sprite().width(),
+//     //     player.get_sprite().height(),
+//     // );
 
-    // canvas.copy_ex(
-    //     texture,
-    //     player.get_sprite(),
-    //     screen_rect,
-    //     player.get_heading(),
-    //     None,
-    //     false,
-    //     false,
-    // )?;
+//     // canvas.copy_ex(
+//     //     texture,
+//     //     player.get_sprite(),
+//     //     screen_rect,
+//     //     player.get_heading(),
+//     //     None,
+//     //     false,
+//     //     false,
+//     // )?;
 
-    canvas.present();
+//     graphics.canvas.present();
 
-    Ok(())
-}
+//     Ok(())
+// }
 
 //TODO: Go through and outsource certain things to different files
 fn main() -> Result<(), String> {
@@ -76,8 +82,7 @@ fn main() -> Result<(), String> {
     let mut canvas: WindowCanvas = window.into_canvas().present_vsync().build().unwrap();
 
     //create the player ship sprite from an image
-    let texture_creator = canvas.texture_creator();
-    let texture = texture_creator.load_texture("assets/ship.png")?;
+    // let texture = texture_creator.load_texture("assets/ship.png")?;
 
     // let mut player = create_player(
     //     Point::new(0, 0),
@@ -91,6 +96,13 @@ fn main() -> Result<(), String> {
     let mut input_stack: Vec<Scancode> = Vec::with_capacity(241);
 
     let mut event_pump = sdl_context.event_pump()?;
+
+    let texture_creator = canvas.texture_creator();
+    let mut graphics = Graphics {
+        canvas: canvas,
+        _texture_creator: texture_creator,
+        textures: HashMap::new(),
+    };
 
     //game loop
     'running: loop {
@@ -159,7 +171,7 @@ fn main() -> Result<(), String> {
         // player.update(&mut input_stack);
 
         // //draw to screen
-        render(&mut canvas, Color::RGB(0, 0, 0), &texture)?;
+        // render(&mut graphics)?;
         // //Lmimt to 144 fps
         thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     }
