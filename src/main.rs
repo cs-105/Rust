@@ -1,8 +1,5 @@
 mod input;
-
-use std::fs::File;
-use std::io::BufReader;
-use rodio::{Decoder, OutputStream, source::Source};
+mod music;
 
 extern crate sdl2;
 
@@ -21,6 +18,9 @@ use input::controller::Input;
 use input::controller::Player;
 use input::controller::create_player;
 use input::controller::remove_input;
+
+//imports from music file
+use crate::music::music::music;
 
 //defining constants
 //dimensions and title of the window to be rendered
@@ -86,35 +86,12 @@ fn main() -> Result<(), String> {
 
 
 
-    //MUSIC STARTS HERE for now
-
-    fn music(){
-
-        // Make Stream Handle
-        let (_stream, stream_handle) = OutputStream::try_default().unwrap();
-        
-        // Open Music File
-        let file = BufReader::new(File::open("assets/Sample.ogg").unwrap());
-        
-        let source = Decoder::new(file).unwrap();
-        
-        // Decode the Music File
-        let music_play = stream_handle.play_raw(source.convert_samples());
-        
-        std::thread::sleep(std::time::Duration::from_secs(5));
-        
-        }
-
-        
-
-
-
 
     //game loop
     'running: loop{
 
+
         music();
-        
         
         
 

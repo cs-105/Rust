@@ -1,16 +1,22 @@
-public fn music(){
+pub mod music{
 
-// Make Stream Handle
-let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+    use std::fs::File;
+    use std::io::BufReader;
+    use rodio::{Decoder, OutputStream, source::Source};
 
-// Open Music File
-let file = BufReader::new(File::open("assets/Sample.ogg").unwrap());
+        pub fn music(){
 
-let source = Decoder::new(file).unwrap();
+            // Make Stream Handle
+            let (_stream, stream_handle) = OutputStream::try_default().unwrap();
 
-// Decode the Music File
-stream_handle.play_raw(source.convert_samples());
+            // Open Music File
+            let file = BufReader::new(File::open("assets/Sample.ogg").unwrap());
 
-std::thread::sleep(std::time::Duration::from_secs(5));
+            let source = Decoder::new(file).unwrap();
 
+            // Decode the Music File
+            let music_file = stream_handle.play_raw(source.convert_samples());
+
+            std::thread::sleep(std::time::Duration::from_secs(5));
+        }
 }
