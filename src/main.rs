@@ -21,6 +21,7 @@ use input::controller::remove_input;
 
 //imports from music file
 use crate::music::music::music;
+use crate::music::music::music2;
 
 //defining constants
 //dimensions and title of the window to be rendered
@@ -86,12 +87,12 @@ fn main() -> Result<(), String> {
 
 
 
-
+    music2();
     //game loop
     'running: loop{
 
 
-        music();
+        
         
         
 
