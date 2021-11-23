@@ -87,7 +87,7 @@ fn main() -> Result<(), String> {
 
 
 
-    music2();
+    music();
     //game loop
     'running: loop{
 

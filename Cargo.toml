@@ -8,6 +8,7 @@ edition = "2018"
 [dependencies]
 rodio = "0.14.0"
 cpal = "0.13"
+futures = "0.3"
 
 [dependencies.sdl2]
 version = "0.34"
