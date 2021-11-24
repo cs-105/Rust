@@ -8,7 +8,7 @@ pub mod music{
     use rodio::source::{SineWave, Source};
     use futures::executor::block_on;
 
-        pub fn music(){
+        pub fn main_menu_music(){
             
 
             thread::spawn(|| {
@@ -30,7 +30,7 @@ pub mod music{
         });
     }
 
-        pub fn music2(){
+        pub fn in_game_music(){
 
             let (_stream, stream_handle) = OutputStream::try_default().unwrap();
             let sink = Sink::try_new(&stream_handle).unwrap();
