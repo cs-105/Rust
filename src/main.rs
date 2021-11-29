@@ -65,7 +65,10 @@ fn main() -> Result<(), String> {
     let mut player = Player {
         texture: texture_creator.load_texture("assets/ship.png")?,
         position: Rect::new(500, 500, 150, 150),
-        pos: Vec2::new(2.0, 2.0),
+        pos: Vec2::new(
+            SCREEN_WIDTH as f32 / 2.0 - 150.0 / 2.0,
+            SCREEN_HEIGHT as f32 / 2.0 - 150.0 / 2.0,
+        ),
         angle: 0.0,
     };
 

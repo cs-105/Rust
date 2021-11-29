@@ -92,11 +92,11 @@ pub mod player {
             } else if position.y > (height + 50.0) {
                 // Bottom of the screen
                 position.y = -40.0;
-                position.x = 1920.0 - position.x + 150.0;
+                position.x = 1920.0 - position.x - 150.0;
             } else if position.y < -50.0 {
                 // Top of the screen
                 position.y = height + 40.0;
-                position.x = 1920.0 - position.x + 150.0;
+                position.x = 1920.0 - position.x - 150.0;
             }
 
             self.angle = new_angle;
