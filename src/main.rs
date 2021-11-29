@@ -165,8 +165,6 @@ fn main() -> Result<(), String> {
     //     PLAYER_ROTATION_SPEED,
     //     -90.0,
     // );
-
-    let mut input_stack: Vec<Scancode> = Vec::with_capacity(241);
     let mut event_pump = sdl_context.event_pump()?;
     let texture_creator = canvas.texture_creator();
 
@@ -175,6 +173,39 @@ fn main() -> Result<(), String> {
         position: Rect::new(500, 500, 150, 150),
         pos: Vec2::new(2.0, 2.0),
     };
+
+    let game_controller_subsystem = sdl_context.game_controller()?;
+
+    let available = game_controller_subsystem
+        .num_joysticks()
+        .map_err(|e| format!("can't enumerate joysticks: {}", e))?;
+
+    println!("{} joysticks available", available);
+
+    let mut controller = (0..available)
+        .find_map(|id| {
+            println!("con");
+            if !game_controller_subsystem.is_game_controller(id) {
+                println!("{} is not a game controller", id);
+                return None;
+            }
+
+            println!("Attempting to open controller {}", id);
+
+            match game_controller_subsystem.open(id) {
+                Ok(c) => {
+                    // We managed to find and open a game controller,
+                    // exit the loop
+                    println!("Success: opened \"{}\"", c.name());
+                    Some(c)
+                }
+                Err(e) => {
+                    println!("failed: {:?}", e);
+                    None
+                }
+            }
+        })
+        .expect("Controller");
 
     let now = Instant::now();
     let mut old_time: Duration = now.elapsed();
