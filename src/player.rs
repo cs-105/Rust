@@ -81,6 +81,7 @@ pub mod player {
             let velocity = acceleration * Vec2::new(delta as f32, delta as f32);
             let mut position = new_pos + (velocity * Vec2::new(delta as f32, delta as f32));
 
+            // TODO: Run this code on every game object that is a physics object
             if position.x > (width + 50.0) {
                 // Right of the screen
                 position.x = -40.0;
