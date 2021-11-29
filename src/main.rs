@@ -30,6 +30,8 @@ use std::time::Instant;
 use glam::Vec2;
 use std::ops::Add;
 
+use std::f32::consts::PI;
+
 // use graphics::graphics::Graphics;
 
 // use game_object::game_object::Renderable;
@@ -87,6 +89,7 @@ pub struct Player {
     texture: Texture,
     position: Rect,
     pos: Vec2,
+    angle: f32,
 }
 
 impl GameObject for Player {
@@ -101,7 +104,7 @@ impl GameObject for Player {
         println!("cinput: {:?}", controller_input);
 
         let new_pos: Vec2 = self.pos.clone();
-        let speed = 150.0;
+        let speed = 200.0;
 
         let mut force = Vec2::new(0.0, 0.0);
         if keyboard_input.forward {
@@ -125,6 +128,14 @@ impl GameObject for Player {
             controller_input.left.1 * speed,
         ));
 
+        // if (controller_input.right.0 > 0.0 && controller_input.right.1 > 0.0) {
+        let y = controller_input.right.1;
+        let x = controller_input.right.0;
+
+        if y.abs() > 0.4 || x.abs() > 0.4 {
+            self.angle = y.atan2(x);
+        }
+
         let acceleration = force;
         let velocity = acceleration * Vec2::new(delta as f32, delta as f32);
         let position = new_pos + (velocity * Vec2::new(delta as f32, delta as f32));
@@ -138,7 +149,15 @@ impl Renderable for Player {
         canvas.clear();
         canvas.set_draw_color(Color::RGB(0, 0, 0));
         let rect = Rect::new(self.pos.x as i32, self.pos.y as i32, 150, 150);
-        canvas.copy(&self.texture, None, rect);
+        canvas.copy_ex(
+            &self.texture,
+            None,
+            rect,
+            self.angle as f64 * (180.0 / PI) as f64,
+            None,
+            false,
+            false,
+        );
         canvas.present();
     }
     fn set_sprite() {
@@ -199,6 +218,7 @@ fn main() -> Result<(), String> {
         texture: texture_creator.load_texture("assets/ship.png")?,
         position: Rect::new(500, 500, 150, 150),
         pos: Vec2::new(2.0, 2.0),
+        angle: 0.0,
     };
 
     let game_controller_subsystem = sdl_context.game_controller()?;
