@@ -70,7 +70,7 @@ pub mod player {
             let y = controller_input.right.1;
             let x = controller_input.right.0;
             if y.abs() > 0.4 || x.abs() > 0.4 {
-                self.angle = y.atan2(x);
+                new_angle = y.atan2(x);
             }
 
             // Calculate displacement from forces
