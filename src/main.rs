@@ -82,30 +82,28 @@ fn main() -> Result<(), String> {
 
     println!("{} joysticks available", available);
 
-    let mut controller: GameController = (0..available)
-        .find_map(|id| {
-            println!("con");
-            if !game_controller_subsystem.is_game_controller(id) {
-                println!("{} is not a game controller", id);
-                return None;
-            }
+    let mut controller: Option<GameController> = (0..available).find_map(|id| {
+        println!("con");
+        if !game_controller_subsystem.is_game_controller(id) {
+            println!("{} is not a game controller", id);
+            return None;
+        }
 
-            println!("Attempting to open controller {}", id);
+        println!("Attempting to open controller {}", id);
 
-            match game_controller_subsystem.open(id) {
-                Ok(c) => {
-                    // We managed to find and open a game controller,
-                    // exit the loop
-                    println!("Success: opened \"{}\"", c.name());
-                    Some(c)
-                }
-                Err(e) => {
-                    println!("failed: {:?}", e);
-                    None
-                }
+        match game_controller_subsystem.open(id) {
+            Ok(c) => {
+                // We managed to find and open a game controller,
+                // exit the loop
+                println!("Success: opened \"{}\"", c.name());
+                Some(c)
             }
-        })
-        .expect("Controller");
+            Err(e) => {
+                println!("failed: {:?}", e);
+                None
+            }
+        }
+    });
 
     let now = Instant::now();
     let mut old_time: Duration = now.elapsed();
@@ -138,16 +136,25 @@ fn main() -> Result<(), String> {
             right: keys.get(&Keycode::D).is_some(),
         };
 
-        let cInput = ControllerInput {
-            left: (
-                clamp(controller.axis(Axis::LeftX) as f32 / i16::MAX as f32),
-                clamp(controller.axis(Axis::LeftY) as f32 / i16::MAX as f32),
-            ),
-            right: (
-                clamp(controller.axis(Axis::RightX) as f32 / i16::MAX as f32),
-                clamp(controller.axis(Axis::RightY) as f32 / i16::MAX as f32),
-            ),
-        };
+        let cInput: ControllerInput;
+
+        if let Some(c) = &controller {
+            cInput = ControllerInput {
+                left: (
+                    clamp(c.axis(Axis::LeftX) as f32 / i16::MAX as f32),
+                    clamp(c.axis(Axis::LeftY) as f32 / i16::MAX as f32),
+                ),
+                right: (
+                    clamp(c.axis(Axis::RightX) as f32 / i16::MAX as f32),
+                    clamp(c.axis(Axis::RightY) as f32 / i16::MAX as f32),
+                ),
+            };
+        } else {
+            cInput = ControllerInput {
+                left: (0.0, 0.0),
+                right: (0.0, 0.0),
+            };
+        }
 
         let delta_duration = now.elapsed() - old_time;
         let delta_seconds = delta_duration.as_millis() as f64;
