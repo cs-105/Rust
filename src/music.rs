@@ -11,12 +11,12 @@ pub mod music{
         pub fn main_menu_music(){
             
 
-            thread::spawn(|| {
+            
             // Make Stream Handle
             let (_stream, stream_handle) = OutputStream::try_default().unwrap();
 
             // Open Music File
-            let file = BufReader::new(File::open("assets/Sample.ogg").unwrap());
+            let file = BufReader::new(File::open("assets/Sample.mp3").unwrap());
 
             let source = Decoder::new(file).unwrap();
 
@@ -27,8 +27,7 @@ pub mod music{
             std::thread::sleep(std::time::Duration::from_secs(10));
 
             thread::sleep(Duration::from_millis(500));
-        });
-    }
+        }
 
         pub fn in_game_music(){
 

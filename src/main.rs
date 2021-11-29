@@ -87,9 +87,12 @@ fn main() -> Result<(), String> {
 
 
 
-    main_menu_music();
+    // Starting the main menu soundtrack
+    let music_thread = thread::spawn(|| {main_menu_music()});
+    
     //game loop
     'running: loop{
+        
 
 
         
@@ -168,7 +171,7 @@ fn main() -> Result<(), String> {
                 _ => {}
 
             }
-
+            
         }
 
     //Update
