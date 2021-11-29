@@ -1,20 +1,34 @@
 pub mod game_object {
-    extern crate sdl2;
+    use sdl2::rect::Rect;
+    use sdl2::render::WindowCanvas;
 
-    use crate::graphics::graphics::Graphics;
-    use sdl2::render::{TextureCreator, WindowCanvas};
-    use sdl2::video::WindowContext;
-    use std::rc::Rc;
-    pub trait GameObject {
-        fn new() -> Self;
-        fn update(&self, delta_time: f64);
+    #[derive(Debug)]
+    pub struct KeyboardInput {
+        pub forward: bool,
+        pub back: bool,
+        pub left: bool,
+        pub right: bool,
     }
+    #[derive(Debug)]
+    pub struct ControllerInput {
+        pub left: (f32, f32),
+        pub right: (f32, f32),
+    }
+
+    pub trait GameObject {
+        fn update(
+            &mut self,
+            delta: f64,
+            keyboard_input: KeyboardInput,
+            controller_input: ControllerInput,
+        );
+    }
+
     pub trait Renderable {
-        fn new<'a>(graphics: &'a Graphics<'a>) -> Self;
         fn set_sprite();
         fn get_sprite();
-        fn get_position(&self);
-        fn set_position(&self);
-        fn render<'a>(&self, render: &'a Graphics);
+        fn get_position(&self) -> Rect;
+        fn set_position(&mut self, new_position: Rect);
+        fn render(&self, render: &mut WindowCanvas);
     }
 }
