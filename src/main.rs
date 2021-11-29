@@ -29,12 +29,12 @@ use crate::music::music::main_menu_music;
 
 //defining constants
 //dimensions and title of the window to be rendered
-const SCREEN_WIDTH: u32 = 1280; //Width in pixels
-const SCREEN_HEIGHT: u32 = 720; //Height in pixels
+const SCREEN_WIDTH: u32 = 1920; //Width in pixels
+const SCREEN_HEIGHT: u32 = 1080; //Height in pixels
 const WINDOW_TITLE: &str = "The Game";
 
 fn clamp(num: f32) -> f32 {
-    if (num.abs() > 0.1) {
+    if (num.abs() > 0.2) {
         return num;
     } else {
         return 0.0;
@@ -59,17 +59,6 @@ fn main() -> Result<(), String> {
     canvas.clear();
     canvas.present();
 
-    //create the player ship sprite from an image
-    // let texture = texture_creator.load_texture("assets/ship.png")?;
-
-    // let mut player = create_player(
-    //     Point::new(0, 0),
-    //     Rect::new(0, 0, PLAYER_SPRITE_WIDTH, PLAYER_SPRITE_HEIGHT),
-    //     PLAYER_MOVEMENT_SPEED,
-    //     texture,
-    //     PLAYER_ROTATION_SPEED,
-    //     -90.0,
-    // );
     let mut event_pump = sdl_context.event_pump()?;
     let texture_creator = canvas.texture_creator();
 

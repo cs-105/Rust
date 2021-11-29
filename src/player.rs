@@ -16,8 +16,11 @@ pub mod player {
     const PLAYER_SPRITE_WIDTH: u32 = 150; //Width in pixels
     const PLAYER_SPRITE_HEIGHT: u32 = 150; //Height in pixels
 
-    const PLAYER_MOVEMENT_SPEED: f32 = 350.0; //Speed in pixels per second
+    const PLAYER_MOVEMENT_SPEED: f32 = 400.0; //Speed in pixels per second
     const PLAYER_ROTATION_SPEED: f32 = 1.0; //Rotation speed in degrees per second
+
+    const width: f32 = 1920.0 * 1.10;
+    const height: f32 = 1080.0 * 1.10;
 
     pub struct Player {
         pub texture: Texture,
@@ -33,7 +36,7 @@ pub mod player {
             controller_input: ControllerInput,
         ) {
             // Clone position for our new starting point
-            let new_pos: Vec2 = self.pos.clone();
+            let mut new_pos: Vec2 = self.pos.clone();
             let mut new_angle = self.angle.clone();
             let mut force = Vec2::new(0.0, 0.0);
 
@@ -76,7 +79,25 @@ pub mod player {
             // Calculate displacement from forces
             let acceleration = force;
             let velocity = acceleration * Vec2::new(delta as f32, delta as f32);
-            let position = new_pos + (velocity * Vec2::new(delta as f32, delta as f32));
+            let mut position = new_pos + (velocity * Vec2::new(delta as f32, delta as f32));
+
+            if position.x > (width + 50.0) {
+                // Right of the screen
+                position.x = -40.0;
+                position.y = 1080.0 - position.y - 150.0;
+            } else if position.x < -50.0 {
+                // Left of the screen
+                position.x = width + 40.0;
+                position.y = 1080.0 - position.y - 150.0;
+            } else if position.y > (height + 50.0) {
+                // Bottom of the screen
+                position.y = -40.0;
+                position.x = 1920.0 - position.x + 150.0;
+            } else if position.y < -50.0 {
+                // Top of the screen
+                position.y = height + 40.0;
+                position.x = 1920.0 - position.x + 150.0;
+            }
 
             self.angle = new_angle;
             self.pos = position;
