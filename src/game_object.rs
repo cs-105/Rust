@@ -8,6 +8,8 @@ pub mod game_object {
         pub back: bool,
         pub left: bool,
         pub right: bool,
+        pub rotate_left: bool,
+        pub rotate_right: bool,
     }
     #[derive(Debug)]
     pub struct ControllerInput {

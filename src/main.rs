@@ -134,6 +134,9 @@ fn main() -> Result<(), String> {
             back: keys.get(&Keycode::S).is_some(),
             left: keys.get(&Keycode::A).is_some(),
             right: keys.get(&Keycode::D).is_some(),
+
+            rotate_left: keys.get(&Keycode::Q).is_some(),
+            rotate_right: keys.get(&Keycode::E).is_some(),
         };
 
         let cInput: ControllerInput;

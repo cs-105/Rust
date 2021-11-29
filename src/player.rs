@@ -17,7 +17,7 @@ pub mod player {
     const PLAYER_SPRITE_HEIGHT: u32 = 150; //Height in pixels
 
     const PLAYER_MOVEMENT_SPEED: f32 = 350.0; //Speed in pixels per second
-    const PLAYER_ROTATION_SPEED: f32 = 5.0; //Rotation speed in degrees per second
+    const PLAYER_ROTATION_SPEED: f32 = 1.0; //Rotation speed in degrees per second
 
     pub struct Player {
         pub texture: Texture,
@@ -32,11 +32,12 @@ pub mod player {
             keyboard_input: KeyboardInput,
             controller_input: ControllerInput,
         ) {
-            println!("\ndelta: {:?}", delta);
-            println!("kinput: {:?}", keyboard_input);
-            println!("cinput: {:?}", controller_input);
+            // Clone position for our new starting point
             let new_pos: Vec2 = self.pos.clone();
+            let mut new_angle = self.angle.clone();
             let mut force = Vec2::new(0.0, 0.0);
+
+            // Add keyboard forces to vector
             if keyboard_input.forward {
                 force = force.add(Vec2::new(0.0, -PLAYER_MOVEMENT_SPEED));
             }
@@ -49,19 +50,35 @@ pub mod player {
             if keyboard_input.right {
                 force = force.add(Vec2::new(PLAYER_MOVEMENT_SPEED, 0.0));
             }
+
+            if keyboard_input.rotate_left {
+                new_angle -= (PLAYER_ROTATION_SPEED as f64 * delta) as f32;
+            }
+
+            if keyboard_input.rotate_right {
+                new_angle += (PLAYER_ROTATION_SPEED as f64 * delta) as f32;
+            }
+
+            // Add controller forces to vector
             force = force.add(Vec2::new(
                 controller_input.left.0 * PLAYER_MOVEMENT_SPEED,
                 controller_input.left.1 * PLAYER_MOVEMENT_SPEED,
             ));
-            // if (controller_input.right.0 > 0.0 && controller_input.right.1 > 0.0) {
+
+            // If the right controller stick goes passed the deadzone,
+            // calculate the angle of the stick using arc tangent
             let y = controller_input.right.1;
             let x = controller_input.right.0;
             if y.abs() > 0.4 || x.abs() > 0.4 {
                 self.angle = y.atan2(x);
             }
+
+            // Calculate displacement from forces
             let acceleration = force;
             let velocity = acceleration * Vec2::new(delta as f32, delta as f32);
             let position = new_pos + (velocity * Vec2::new(delta as f32, delta as f32));
+
+            self.angle = new_angle;
             self.pos = position;
         }
     }
@@ -75,15 +92,17 @@ pub mod player {
                 PLAYER_SPRITE_WIDTH,
                 PLAYER_SPRITE_HEIGHT,
             );
-            canvas.copy_ex(
-                &self.texture,
-                None,
-                rect,
-                self.angle as f64 * (180.0 / PI) as f64,
-                None,
-                false,
-                false,
-            );
+            canvas
+                .copy_ex(
+                    &self.texture,
+                    None,
+                    rect,
+                    self.angle as f64 * (180.0 / PI) as f64,
+                    None,
+                    false,
+                    false,
+                )
+                .ok();
             canvas.present();
         }
         fn set_sprite() {
