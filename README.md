@@ -12,20 +12,10 @@ For installing Rust on a MacOS or Linux OS just simply run this command in termi
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-If you are running a windows computer and need to install Rust use this link to find rustup-init.exe (this will install cargo as well for windows)
-
-```bash
-https://forge.rust-lang.org/infra/other-installation-methods.html#which
-```
-
+If you are running a windows computer and need to install Rust use [this link](https://forge.rust-lang.org/infra/other-installation-methods.html#which) to find rustup-init.exe (this will install cargo as well for windows)
 
 SDL2 installation varies across the different operating systems 
-so follow the link below and navigate to your correct system for the appropriate file to download.
-
-```bash
-https://www.libsdl.org/download-2.0.php
-```
-
+so follow [this link](https://www.libsdl.org/download-2.0.php) and navigate to your correct system for the appropriate file to download.
 
 For Linux and MacOS users run this line of code to get cargo.
 

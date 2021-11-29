@@ -1,4 +1,6 @@
 mod game_object;
+mod input;
+mod music;
 mod player;
 
 extern crate sdl2;
@@ -20,6 +22,10 @@ use std::collections::HashSet;
 use std::thread;
 use std::time::Duration;
 use std::time::Instant;
+
+//imports from music file
+use crate::music::music::in_game_music;
+use crate::music::music::main_menu_music;
 
 //defining constants
 //dimensions and title of the window to be rendered
@@ -107,6 +113,8 @@ fn main() -> Result<(), String> {
 
     let now = Instant::now();
     let mut old_time: Duration = now.elapsed();
+    // Starting the main menu soundtrack
+    let music_thread = thread::spawn(|| main_menu_music());
     //game loop
     'running: loop {
         //handling input
