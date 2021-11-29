@@ -6,8 +6,10 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+chrono = "0.4"
+glam = { version = "0.20.1", default-features = false, features = ["libm"] }
 
 [dependencies.sdl2]
 version = "0.34"
 default-features = false
-features = ["image"]
+features = ["image", "unsafe_textures"]

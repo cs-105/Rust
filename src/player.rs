@@ -12,35 +12,34 @@ pub mod player {
     use crate::graphics::graphics::Graphics;
 
     pub struct Player {
-        texture: Texture<'static>,
+        texture: String,
         bounds: Rect,
         // position: Point,
     }
 
     // impl GameObject for Player {}
     impl Renderable for Player {
-        fn new(graphics: &mut Graphics) -> Self {
-            let texture: Texture<'static> = graphics
-                .load_texture("assets/ship.png".to_string())
-                .unwrap();
+        fn new() -> Self {
+            // let texture = graphics.load_texture("assets/ship.png");
 
-            let (width, height) = graphics.canvas.output_size().unwrap();
-            let x = width as i32 / 2;
-            let y = height as i32 / 2;
+            // let (width, height) = graphics.canvas.output_size().unwrap();
+            // let x = width as i32 / 2;
+            // let y = height as i32 / 2;
 
-            let texture_size = texture.query();
+            // let texture = graphics.textures.get("assets/ship.png").unwrap();
+            // let texture_size = texture.query();
 
-            let bounds = Rect::new(
-                x,
-                y,
-                texture_size.width.clone(),
-                texture_size.height.clone(),
-            );
+            // let bounds = Rect::new(
+            //     x,
+            //     y,
+            //     texture_size.width.clone(),
+            //     texture_size.height.clone(),
+            // );
 
-            Player {
-                bounds: bounds,
-                texture: texture,
-            }
+            // Player {
+            //     bounds: bounds,
+            //     texture: "assets/ship.png".to_string(),
+            // }
         }
         fn set_sprite() {
             todo!()
@@ -48,22 +47,17 @@ pub mod player {
         fn get_sprite() {
             todo!()
         }
-        fn render(&self, canvas: &mut Canvas<sdl2::video::Window>) {
-            let screen_position = Point::new(self.bounds.x(), self.bounds.y());
-            let screen_rect =
-                Rect::from_center(screen_position, self.bounds.width(), self.bounds.height());
+        fn render<'a>(&self) {
+            // let screen_position = Point::new(self.bounds.x(), self.bounds.y());
+            // let screen_rect =
+            //     Rect::from_center(screen_position, self.bounds.width(), self.bounds.height());
 
-            canvas
-                .copy_ex(
-                    &self.texture,
-                    self.bounds,
-                    screen_rect,
-                    0.0,
-                    None,
-                    false,
-                    false,
-                )
-                .unwrap();
+            // let texture = graphics.textures.get("assets/ship.png").unwrap();
+
+            // let texture = graphics
+            //     .canvas
+            //     .copy_ex(texture, self.bounds, screen_rect, 0.0, None, false, false)
+            //     .unwrap();
         }
         fn get_position(&self) {
             todo!()
