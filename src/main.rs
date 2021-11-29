@@ -1,4 +1,5 @@
 mod input;
+mod music;
 
 extern crate sdl2;
 
@@ -17,6 +18,10 @@ use input::controller::Input;
 use input::controller::Player;
 use input::controller::create_player;
 use input::controller::remove_input;
+
+//imports from music file
+use crate::music::music::main_menu_music;
+use crate::music::music::in_game_music;
 
 //defining constants
 //dimensions and title of the window to be rendered
@@ -80,10 +85,22 @@ fn main() -> Result<(), String> {
 
     let mut event_pump = sdl_context.event_pump()?;
 
+
+
+    // Starting the main menu soundtrack
+    let music_thread = thread::spawn(|| {main_menu_music()});
+    
     //game loop
     'running: loop{
+        
+
+
+        
+        
+        
 
         for event in event_pump.poll_iter(){
+            
             //handling input
             match event{
                 //Quit logic
@@ -154,7 +171,7 @@ fn main() -> Result<(), String> {
                 _ => {}
 
             }
-
+            
         }
 
     //Update
