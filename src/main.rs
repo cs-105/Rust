@@ -3,6 +3,8 @@
 // mod player;
 
 extern crate sdl2;
+use sdl2::controller::Axis;
+use sdl2::controller::GameController;
 use sdl2::keyboard::Keycode;
 
 use sdl2::event::Event;
@@ -73,7 +75,12 @@ pub trait Renderable {
 }
 
 pub trait GameObject {
-    fn update(&mut self, delta: f64, keyboard_input: KeyboardInput);
+    fn update(
+        &mut self,
+        delta: f64,
+        keyboard_input: KeyboardInput,
+        controller_input: ControllerInput,
+    );
 }
 
 pub struct Player {
@@ -83,28 +90,40 @@ pub struct Player {
 }
 
 impl GameObject for Player {
-    fn update(&mut self, delta: f64, keyboard_input: KeyboardInput) {
+    fn update(
+        &mut self,
+        delta: f64,
+        keyboard_input: KeyboardInput,
+        controller_input: ControllerInput,
+    ) {
         println!("\ndelta: {:?}", delta);
         println!("kinput: {:?}", keyboard_input);
+        println!("cinput: {:?}", controller_input);
 
         let new_pos: Vec2 = self.pos.clone();
+        let speed = 150.0;
 
         let mut force = Vec2::new(0.0, 0.0);
         if keyboard_input.forward {
-            force = force.add(Vec2::new(0.0, -70.0));
+            force = force.add(Vec2::new(0.0, -speed));
         }
 
         if keyboard_input.back {
-            force = force.add(Vec2::new(0.0, 70.0));
+            force = force.add(Vec2::new(0.0, speed));
         }
 
         if keyboard_input.left {
-            force = force.add(Vec2::new(-70.0, 0.0));
+            force = force.add(Vec2::new(-speed, 0.0));
         }
 
         if keyboard_input.right {
-            force = force.add(Vec2::new(70.0, 0.0));
+            force = force.add(Vec2::new(speed, 0.0));
         }
+
+        force = force.add(Vec2::new(
+            controller_input.left.0 * speed,
+            controller_input.left.1 * speed,
+        ));
 
         let acceleration = force;
         let velocity = acceleration * Vec2::new(delta as f32, delta as f32);
@@ -133,6 +152,14 @@ impl Renderable for Player {
     }
     fn set_position(&mut self, new_position: Rect) {
         self.position = new_position;
+    }
+}
+
+fn clamp(num: f32) -> f32 {
+    if (num.abs() > 0.1) {
+        return num;
+    } else {
+        return 0.0;
     }
 }
 
@@ -182,7 +209,7 @@ fn main() -> Result<(), String> {
 
     println!("{} joysticks available", available);
 
-    let mut controller = (0..available)
+    let mut controller: GameController = (0..available)
         .find_map(|id| {
             println!("con");
             if !game_controller_subsystem.is_game_controller(id) {
@@ -238,10 +265,21 @@ fn main() -> Result<(), String> {
             right: keys.get(&Keycode::D).is_some(),
         };
 
+        let cInput = ControllerInput {
+            left: (
+                clamp(controller.axis(Axis::LeftX) as f32 / i16::MAX as f32),
+                clamp(controller.axis(Axis::LeftY) as f32 / i16::MAX as f32),
+            ),
+            right: (
+                clamp(controller.axis(Axis::RightX) as f32 / i16::MAX as f32),
+                clamp(controller.axis(Axis::RightY) as f32 / i16::MAX as f32),
+            ),
+        };
+
         let delta_duration = now.elapsed() - old_time;
         let delta_seconds = delta_duration.as_millis() as f64;
 
-        player.update(delta_seconds / 100.0, kInput);
+        player.update(delta_seconds / 100.0, kInput, cInput);
         player.render(&mut canvas);
         old_time = now.elapsed();
 
