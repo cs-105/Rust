@@ -16,8 +16,11 @@ pub mod player {
     const PLAYER_SPRITE_WIDTH: u32 = 150; //Width in pixels
     const PLAYER_SPRITE_HEIGHT: u32 = 150; //Height in pixels
 
-    const PLAYER_MOVEMENT_SPEED: f32 = 400.0; //Speed in pixels per second
+    const PLAYER_MAX_MOVEMENT_SPEED: f32 = 400.0; //Speed in pixels per second
     const PLAYER_ROTATION_SPEED: f32 = 1.0; //Rotation speed in degrees per second
+    const PLAYER_ACCELERATION: f32 = 65.0; //Acceleration applied to player
+
+    const DRAG: f32 = 0.075; //Drag multiplier (applied to velocity)
 
     const width: f32 = 1920.0 * 1.10;
     const height: f32 = 1080.0 * 1.10;
@@ -27,6 +30,7 @@ pub mod player {
         pub position: Rect,
         pub pos: Vec2,
         pub angle: f32,
+        pub velocity: Vec2,
     }
     impl GameObject for Player {
         fn update(
@@ -37,21 +41,22 @@ pub mod player {
         ) {
             // Clone position for our new starting point
             let mut new_pos: Vec2 = self.pos.clone();
+            let mut new_vel: Vec2 = self.velocity.clone();
             let mut new_angle = self.angle.clone();
             let mut force = Vec2::new(0.0, 0.0);
 
             // Add keyboard forces to vector
             if keyboard_input.forward {
-                force = force.add(Vec2::new(0.0, -PLAYER_MOVEMENT_SPEED));
+                force = force.add(Vec2::new(0.0, -PLAYER_ACCELERATION));
             }
             if keyboard_input.back {
-                force = force.add(Vec2::new(0.0, PLAYER_MOVEMENT_SPEED));
+                force = force.add(Vec2::new(0.0, PLAYER_ACCELERATION));
             }
             if keyboard_input.left {
-                force = force.add(Vec2::new(-PLAYER_MOVEMENT_SPEED, 0.0));
+                force = force.add(Vec2::new(-PLAYER_ACCELERATION, 0.0));
             }
             if keyboard_input.right {
-                force = force.add(Vec2::new(PLAYER_MOVEMENT_SPEED, 0.0));
+                force = force.add(Vec2::new(PLAYER_ACCELERATION, 0.0));
             }
 
             if keyboard_input.rotate_left {
@@ -64,8 +69,8 @@ pub mod player {
 
             // Add controller forces to vector
             force = force.add(Vec2::new(
-                controller_input.left.0 * PLAYER_MOVEMENT_SPEED,
-                controller_input.left.1 * PLAYER_MOVEMENT_SPEED,
+                controller_input.left.0 * PLAYER_ACCELERATION,
+                controller_input.left.1 * PLAYER_ACCELERATION,
             ));
 
             // If the right controller stick goes passed the deadzone,
@@ -76,10 +81,22 @@ pub mod player {
                 new_angle = y.atan2(x);
             }
 
-            // Calculate displacement from forces
-            let acceleration = force;
-            let velocity = acceleration * Vec2::new(delta as f32, delta as f32);
-            let mut position = new_pos + (velocity * Vec2::new(delta as f32, delta as f32));
+            // Calculate velocity from forces
+            let mut velocity = new_vel + (force * delta as f32);
+
+            //Clamp velocity
+            if velocity.length() > PLAYER_MAX_MOVEMENT_SPEED{
+
+                velocity.x = velocity.x * (PLAYER_MAX_MOVEMENT_SPEED / velocity.length());
+                velocity.y = velocity.y * (PLAYER_MAX_MOVEMENT_SPEED / velocity.length());
+
+            }
+
+            //Add drag
+            velocity = velocity - (velocity * DRAG);
+
+            //Calculate displacement from velocity
+            let mut position = new_pos + (velocity * delta as f32);
 
             // TODO: Run this code on every game object that is a physics object
             if position.x > (width + 50.0) {
@@ -102,6 +119,7 @@ pub mod player {
 
             self.angle = new_angle;
             self.pos = position;
+            self.velocity = velocity;
         }
     }
     impl Renderable for Player {

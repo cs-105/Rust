@@ -70,6 +70,7 @@ fn main() -> Result<(), String> {
             SCREEN_HEIGHT as f32 / 2.0 - 150.0 / 2.0,
         ),
         angle: 0.0,
+        velocity: Vec2::new(0.0,0.0),
     };
 
     let game_controller_subsystem = sdl_context.game_controller()?;
