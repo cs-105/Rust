@@ -4,6 +4,7 @@ pub mod music{
     use std::io::BufReader;
     use std::time::Duration;
     use std::thread;
+    use std::sync::mpsc::{Sender, Receiver};
     use std::sync::mpsc;
     use rodio::{Decoder, OutputStream, Sink};
     use rodio::source::{SineWave, Source};
@@ -32,7 +33,7 @@ pub mod music{
 
         pub fn in_game_music(){
 
-            let (tx, rx) = mpsc::channel();
+            let (tx, rx): (Sender<String>, Receiver<String>) = mpsc::channel();
 
             let (_stream, stream_handle) = OutputStream::try_default().unwrap();
             let sink = Sink::try_new(&stream_handle).unwrap();
@@ -40,12 +41,23 @@ pub mod music{
             let file = BufReader::new(File::open("assets/Sample.ogg").unwrap());
             let source = Decoder::new(file).unwrap();
             // Add a dummy source of the sake of the example.
-            
             sink.append(source);
+            
             
             // The sound plays in a separate thread. This call will block the current thread until the sink
             // has finished playing all its queued sounds.
-            sink.sleep_until_end();
+            loop {
+
+                let mut received = rx.recv().unwrap();
+    
+                if received != "Yes" {
+                    let file = BufReader::new(File::open("assets/Sample.ogg").unwrap());
+                    let source = Decoder::new(file).unwrap();
+                    sink.stop();
+                }
+    
+               
+            }
         }       
 }
 

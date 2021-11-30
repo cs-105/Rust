@@ -23,6 +23,7 @@ use std::thread;
 use std::time::Duration;
 use std::time::Instant;
 use std::io::sink;
+use std::sync::mpsc::{Sender, Receiver};
 use std::sync::mpsc;
 
 //imports from music file
