@@ -11,6 +11,7 @@ pub mod player {
     use sdl2::render::Texture;
     use sdl2::render::WindowCanvas;
     use std::ops::Add;
+    use std::io::sink;
 
     //dimensions of the player sprite
     const PLAYER_SPRITE_WIDTH: u32 = 150; //Width in pixels

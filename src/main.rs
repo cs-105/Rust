@@ -22,6 +22,8 @@ use std::collections::HashSet;
 use std::thread;
 use std::time::Duration;
 use std::time::Instant;
+use std::io::sink;
+use std::sync::mpsc;
 
 //imports from music file
 use crate::music::music::in_game_music;
@@ -105,8 +107,11 @@ fn main() -> Result<(), String> {
 
     let now = Instant::now();
     let mut old_time: Duration = now.elapsed();
+
+    
     // Starting the main menu soundtrack
-    let music_thread = thread::spawn(|| main_menu_music());
+    let music_thread = thread::spawn(move|| in_game_music());
+    
     //game loop
     'running: loop {
         //handling input
