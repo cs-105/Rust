@@ -12,6 +12,9 @@ pub mod player {
     use sdl2::render::WindowCanvas;
     use std::ops::Add;
 
+    const SCREEN_WIDTH: u32 = 1920; //Width in pixels
+    const SCREEN_HEIGHT: u32 = 1080; //Height in pixels
+
     //dimensions of the player sprite
     const PLAYER_SPRITE_WIDTH: u32 = 150; //Width in pixels
     const PLAYER_SPRITE_HEIGHT: u32 = 150; //Height in pixels
@@ -19,8 +22,8 @@ pub mod player {
     const PLAYER_MOVEMENT_SPEED: f32 = 400.0; //Speed in pixels per second
     const PLAYER_ROTATION_SPEED: f32 = 1.0; //Rotation speed in degrees per second
 
-    const width: f32 = 1920.0 * 1.10;
-    const height: f32 = 1080.0 * 1.10;
+    const width: f32 = SCREEN_WIDTH as f32 * 1.10;
+    const height: f32 = SCREEN_HEIGHT as f32 * 1.10;
 
     pub struct Player {
         pub texture: Texture,
@@ -85,19 +88,19 @@ pub mod player {
             if position.x > (width + 50.0) {
                 // Right of the screen
                 position.x = -40.0;
-                position.y = 1080.0 - position.y - 150.0;
+                position.y = SCREEN_HEIGHT as f32 - position.y - 150.0;
             } else if position.x < -50.0 {
                 // Left of the screen
                 position.x = width + 40.0;
-                position.y = 1080.0 - position.y - 150.0;
+                position.y = SCREEN_HEIGHT as f32 - position.y - 150.0;
             } else if position.y > (height + 50.0) {
                 // Bottom of the screen
                 position.y = -40.0;
-                position.x = 1920.0 - position.x - 150.0;
+                position.x = SCREEN_WIDTH as f32 - position.x - 150.0;
             } else if position.y < -50.0 {
                 // Top of the screen
                 position.y = height + 40.0;
-                position.x = 1920.0 - position.x - 150.0;
+                position.x = SCREEN_WIDTH as f32 - position.x - 150.0;
             }
 
             self.angle = new_angle;
