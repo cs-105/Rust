@@ -17,7 +17,7 @@ pub mod player {
     const PLAYER_SPRITE_HEIGHT: u32 = 150; //Height in pixels
 
     const PLAYER_MAX_MOVEMENT_SPEED: f32 = 400.0; //Speed in pixels per second
-    const PLAYER_ROTATION_SPEED: f32 = 1.0; //Rotation speed in degrees per second
+    const PLAYER_ROTATION_SPEED: f32 = 0.5; //Rotation speed in radians per second
     const PLAYER_ACCELERATION: f32 = 65.0; //Acceleration applied to player
 
     const DRAG: f32 = 0.075; //Drag multiplier (applied to velocity)
@@ -80,6 +80,10 @@ pub mod player {
             if y.abs() > 0.4 || x.abs() > 0.4 {
                 new_angle = y.atan2(x);
             }
+
+            //Transform force
+            force = set_vec_angle(force, new_angle);
+            println!("Transformed force: {:?}", force);
 
             // Calculate velocity from forces
             let mut velocity = new_vel + (force * delta as f32);
@@ -157,5 +161,14 @@ pub mod player {
         fn set_position(&mut self, new_position: Rect) {
             self.position = new_position;
         }
+    }
+
+    fn set_vec_angle(vector: Vec2, angle: f32) -> Vec2{
+
+        let new_x = vector.length() * (angle.cos());
+        let new_y = vector.length() * (angle.sin());
+
+        Vec2::new(new_x, new_y)
+
     }
 }
