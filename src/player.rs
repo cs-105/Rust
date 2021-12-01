@@ -81,9 +81,8 @@ pub mod player {
                 new_angle = y.atan2(x);
             }
 
-            //Transform force
+            // Transform force
             force = set_vec_angle(force, new_angle + (90.0 * PI / 180.0));
-            println!("Transformed force: {:?}", force);
 
             // Calculate velocity from forces
             let mut velocity = new_vel + (force * delta as f32);
@@ -162,9 +161,8 @@ pub mod player {
     }
 
     fn set_vec_angle(vector: Vec2, angle: f32) -> Vec2 {
-        println!("angle {:?}", angle);
-        let new_x = vector.x * f32::cos(angle) - vector.y * f32::sin(angle);
-        let new_y = vector.x * f32::sin(angle) + vector.y * f32::cos(angle);
+        let new_x = vector.x * angle.cos() - vector.y * angle.sin();
+        let new_y = vector.x * angle.sin() + vector.y * angle.cos();
 
         Vec2::new(new_x, new_y)
     }
