@@ -82,18 +82,16 @@ pub mod player {
             }
 
             //Transform force
-            force = set_vec_angle(force, new_angle);
+            force = set_vec_angle(force, new_angle + (90.0 * PI / 180.0));
             println!("Transformed force: {:?}", force);
 
             // Calculate velocity from forces
             let mut velocity = new_vel + (force * delta as f32);
 
             //Clamp velocity
-            if velocity.length() > PLAYER_MAX_MOVEMENT_SPEED{
-
+            if velocity.length() > PLAYER_MAX_MOVEMENT_SPEED {
                 velocity.x = velocity.x * (PLAYER_MAX_MOVEMENT_SPEED / velocity.length());
                 velocity.y = velocity.y * (PLAYER_MAX_MOVEMENT_SPEED / velocity.length());
-
             }
 
             //Add drag
@@ -163,12 +161,11 @@ pub mod player {
         }
     }
 
-    fn set_vec_angle(vector: Vec2, angle: f32) -> Vec2{
-
-        let new_x = vector.length() * (angle.cos());
-        let new_y = vector.length() * (angle.sin());
+    fn set_vec_angle(vector: Vec2, angle: f32) -> Vec2 {
+        println!("angle {:?}", angle);
+        let new_x = vector.x * f32::cos(angle) - vector.y * f32::sin(angle);
+        let new_y = vector.x * f32::sin(angle) + vector.y * f32::cos(angle);
 
         Vec2::new(new_x, new_y)
-
     }
 }
