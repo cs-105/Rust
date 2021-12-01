@@ -1,14 +1,17 @@
+mod asteroid;
 mod game_object;
 mod input;
 mod music;
 mod player;
 
 extern crate sdl2;
+use crate::asteroid::asteroid::Asteroid;
 use crate::game_object::game_object::ControllerInput;
 use crate::game_object::game_object::GameObject;
 use crate::game_object::game_object::KeyboardInput;
 use crate::game_object::game_object::Renderable;
 use crate::player::player::Player;
+
 use glam::Vec2;
 use sdl2::controller::Axis;
 use sdl2::controller::GameController;
@@ -16,8 +19,10 @@ use sdl2::event::Event;
 use sdl2::image::LoadTexture;
 use sdl2::image::{self, InitFlag};
 use sdl2::keyboard::Keycode;
+use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::render::WindowCanvas;
+use sdl2::video::GLProfile;
 use std::collections::HashSet;
 use std::thread;
 use std::time::Duration;
@@ -29,8 +34,8 @@ use crate::music::music::main_menu_music;
 
 //defining constants
 //dimensions and title of the window to be rendered
-const SCREEN_WIDTH: u32 = 1920; //Width in pixels
-const SCREEN_HEIGHT: u32 = 1080; //Height in pixels
+const SCREEN_WIDTH: u32 = 1280; //Width in pixels
+const SCREEN_HEIGHT: u32 = 720; //Height in pixels
 const WINDOW_TITLE: &str = "The Game";
 
 fn clamp(num: f32) -> f32 {
@@ -46,11 +51,25 @@ fn main() -> Result<(), String> {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
+    sdl2::hint::set_with_priority(
+        "SDL_HINT_RENDER_SCALE_QUALITY",
+        "2",
+        &sdl2::hint::Hint::Override,
+    );
+
+    let gl_attr = video_subsystem.gl_attr();
+
+    // Don't use deprecated OpenGL functions
+    gl_attr.set_context_profile(GLProfile::Core);
+    // Enable anti-aliasing
+    gl_attr.set_multisample_samples(4);
+
     let _image_context = image::init(InitFlag::PNG | InitFlag::JPG)?;
 
     let window = video_subsystem
         .window(WINDOW_TITLE, SCREEN_WIDTH, SCREEN_HEIGHT)
         .position_centered()
+        .opengl()
         .build()
         .unwrap();
 
@@ -70,6 +89,10 @@ fn main() -> Result<(), String> {
             SCREEN_HEIGHT as f32 / 2.0 - 150.0 / 2.0,
         ),
         angle: 0.0,
+    };
+
+    let mut asteroid = Asteroid {
+        texture: texture_creator.load_texture("assets/asteroid.png")?,
     };
 
     let game_controller_subsystem = sdl_context.game_controller()?;
@@ -129,7 +152,7 @@ fn main() -> Result<(), String> {
             .filter_map(Keycode::from_scancode)
             .collect();
 
-        let kInput = KeyboardInput {
+        let k_input = KeyboardInput {
             forward: keys.get(&Keycode::W).is_some(),
             back: keys.get(&Keycode::S).is_some(),
             left: keys.get(&Keycode::A).is_some(),
@@ -139,10 +162,10 @@ fn main() -> Result<(), String> {
             rotate_right: keys.get(&Keycode::E).is_some(),
         };
 
-        let cInput: ControllerInput;
+        let c_input: ControllerInput;
 
         if let Some(c) = &controller {
-            cInput = ControllerInput {
+            c_input = ControllerInput {
                 left: (
                     clamp(c.axis(Axis::LeftX) as f32 / i16::MAX as f32),
                     clamp(c.axis(Axis::LeftY) as f32 / i16::MAX as f32),
@@ -153,7 +176,7 @@ fn main() -> Result<(), String> {
                 ),
             };
         } else {
-            cInput = ControllerInput {
+            c_input = ControllerInput {
                 left: (0.0, 0.0),
                 right: (0.0, 0.0),
             };
@@ -162,10 +185,17 @@ fn main() -> Result<(), String> {
         let delta_duration = now.elapsed() - old_time;
         let delta_seconds = delta_duration.as_millis() as f64;
 
-        player.update(delta_seconds / 100.0, kInput, cInput);
-        player.render(&mut canvas);
-        old_time = now.elapsed();
+        canvas.clear();
+        canvas.set_draw_color(Color::RGB(0, 0, 0));
 
+        asteroid.render(&mut canvas);
+
+        player.update(delta_seconds / 100.0, k_input, c_input);
+        player.render(&mut canvas);
+
+        canvas.present();
+
+        old_time = now.elapsed();
         thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     }
 
