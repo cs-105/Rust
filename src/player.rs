@@ -6,18 +6,17 @@ pub mod player {
     use crate::KeyboardInput;
     use core::f32::consts::PI;
     use glam::Vec2;
-    use sdl2::pixels::Color;
     use sdl2::rect::Rect;
     use sdl2::render::Texture;
     use sdl2::render::WindowCanvas;
     use std::ops::Add;
 
-    const SCREEN_WIDTH: u32 = 1920; //Width in pixels
-    const SCREEN_HEIGHT: u32 = 1080; //Height in pixels
+    const SCREEN_WIDTH: u32 = 1280; //Width in pixels
+    const SCREEN_HEIGHT: u32 = 720; //Height in pixels
 
     //dimensions of the player sprite
-    const PLAYER_SPRITE_WIDTH: u32 = 150; //Width in pixels
-    const PLAYER_SPRITE_HEIGHT: u32 = 150; //Height in pixels
+    const PLAYER_SPRITE_WIDTH: u32 = 75; //Width in pixels
+    const PLAYER_SPRITE_HEIGHT: u32 = 58; //Height in pixels
 
     const PLAYER_MOVEMENT_SPEED: f32 = 400.0; //Speed in pixels per second
     const PLAYER_ROTATION_SPEED: f32 = 1.0; //Rotation speed in degrees per second
@@ -39,7 +38,7 @@ pub mod player {
             controller_input: ControllerInput,
         ) {
             // Clone position for our new starting point
-            let mut new_pos: Vec2 = self.pos.clone();
+            let new_pos: Vec2 = self.pos.clone();
             let mut new_angle = self.angle.clone();
             let mut force = Vec2::new(0.0, 0.0);
 
@@ -81,26 +80,26 @@ pub mod player {
 
             // Calculate displacement from forces
             let acceleration = force;
-            let velocity = acceleration * Vec2::new(delta as f32, delta as f32);
-            let mut position = new_pos + (velocity * Vec2::new(delta as f32, delta as f32));
+            let velocity = acceleration * delta as f32;
+            let mut position = new_pos + (velocity * delta as f32);
 
             // TODO: Run this code on every game object that is a physics object
             if position.x > (width + 50.0) {
                 // Right of the screen
                 position.x = -40.0;
-                position.y = SCREEN_HEIGHT as f32 - position.y - 150.0;
+                position.y = SCREEN_HEIGHT as f32 - position.y - PLAYER_SPRITE_WIDTH as f32;
             } else if position.x < -50.0 {
                 // Left of the screen
                 position.x = width + 40.0;
-                position.y = SCREEN_HEIGHT as f32 - position.y - 150.0;
+                position.y = SCREEN_HEIGHT as f32 - position.y - PLAYER_SPRITE_WIDTH as f32;
             } else if position.y > (height + 50.0) {
                 // Bottom of the screen
                 position.y = -40.0;
-                position.x = SCREEN_WIDTH as f32 - position.x - 150.0;
+                position.x = SCREEN_WIDTH as f32 - position.x - PLAYER_SPRITE_WIDTH as f32;
             } else if position.y < -50.0 {
                 // Top of the screen
                 position.y = height + 40.0;
-                position.x = SCREEN_WIDTH as f32 - position.x - 150.0;
+                position.x = SCREEN_WIDTH as f32 - position.x - PLAYER_SPRITE_WIDTH as f32;
             }
 
             self.angle = new_angle;
@@ -109,8 +108,6 @@ pub mod player {
     }
     impl Renderable for Player {
         fn render(&self, canvas: &mut WindowCanvas) {
-            canvas.clear();
-            canvas.set_draw_color(Color::RGB(0, 0, 0));
             let rect = Rect::new(
                 self.pos.x as i32,
                 self.pos.y as i32,
@@ -128,7 +125,6 @@ pub mod player {
                     false,
                 )
                 .ok();
-            canvas.present();
         }
         fn set_sprite() {
             todo!()
