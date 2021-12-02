@@ -12,8 +12,6 @@ pub mod music {
         // Make Stream Handle
         let (_stream, stream_handle) = OutputStream::try_default().unwrap();
 
-
-
         // Open Music File
         let file = BufReader::new(File::open("assets/Sample.mp3").unwrap());
 
@@ -31,24 +29,5 @@ pub mod music {
     pub fn in_game_music() {
         let (_stream, stream_handle) = OutputStream::try_default().unwrap();
         let sink = Sink::try_new(&stream_handle).unwrap();
-
-        // The sound plays in a separate thread. This call will block the current thread until the sink
-        // has finished playing all its queued sounds.
-
-        loop {
-            let received = rx.recv().unwrap();
-
-            if received != None {
-                let file = BufReader::new(File::open("assets/Sample.ogg").unwrap());
-                let source = Decoder::new(file).unwrap();
-                sink.stop();
-                sink.append()
-                sink.play();
-            }
-
-           
-        }
-
-        // sink.sleep_until_end();
     }
 }

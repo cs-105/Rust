@@ -89,10 +89,7 @@ fn main() -> Result<(), String> {
             SCREEN_HEIGHT as f32 / 2.0 - 150.0 / 2.0,
         ),
         angle: 0.0,
-    };
-
-    let mut asteroid = Asteroid {
-        texture: texture_creator.load_texture("assets/asteroid.png")?,
+        velocity: Vec2::new(0.0, 0.0),
     };
 
     let game_controller_subsystem = sdl_context.game_controller()?;
@@ -130,6 +127,23 @@ fn main() -> Result<(), String> {
     let mut old_time: Duration = now.elapsed();
     // Starting the main menu soundtrack
     let music_thread = thread::spawn(|| main_menu_music());
+
+    let mut asteroids: Vec<Asteroid> = Vec::new();
+    asteroids.push(Asteroid::new_with_position(
+        texture_creator.load_texture("assets/asteroid.png")?,
+        Vec2::new(50.0, 50.0),
+    ));
+
+    asteroids.push(Asteroid::new_with_position(
+        texture_creator.load_texture("assets/asteroid.png")?,
+        Vec2::new(150.0, 150.0),
+    ));
+
+    asteroids.push(Asteroid::new_with_position(
+        texture_creator.load_texture("assets/asteroid.png")?,
+        Vec2::new(500.0, 500.0),
+    ));
+
     //game loop
     'running: loop {
         //handling input
@@ -188,9 +202,12 @@ fn main() -> Result<(), String> {
         canvas.clear();
         canvas.set_draw_color(Color::RGB(0, 0, 0));
 
-        asteroid.render(&mut canvas);
-
         player.update(delta_seconds / 100.0, k_input, c_input);
+
+        for asteroid in asteroids.iter_mut() {
+            asteroid.update(delta_seconds / 100.0, k_input, c_input);
+            asteroid.render(&mut canvas);
+        }
         player.render(&mut canvas);
 
         canvas.present();

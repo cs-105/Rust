@@ -2,7 +2,7 @@ pub mod game_object {
     use sdl2::rect::Rect;
     use sdl2::render::WindowCanvas;
 
-    #[derive(Debug)]
+    #[derive(Debug, Copy, Clone)]
     pub struct KeyboardInput {
         pub forward: bool,
         pub back: bool,
@@ -11,7 +11,7 @@ pub mod game_object {
         pub rotate_left: bool,
         pub rotate_right: bool,
     }
-    #[derive(Debug)]
+    #[derive(Debug, Copy, Clone)]
     pub struct ControllerInput {
         pub left: (f32, f32),
         pub right: (f32, f32),
