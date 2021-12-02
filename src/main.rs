@@ -130,6 +130,7 @@ fn main() -> Result<(), String> {
     let mut old_time: Duration = now.elapsed();
     // Starting the main menu soundtrack
     let music_thread = thread::spawn(|| main_menu_music());
+    
     //game loop
     'running: loop {
         //handling input

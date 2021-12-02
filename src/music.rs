@@ -15,7 +15,7 @@ pub mod music {
 
 
         // Open Music File
-        let file = BufReader::new(File::open("assets/Sample.mp3").unwrap());
+        let file = BufReader::new(File::open("assets/Asteroids_MAIN_MENU.mp3").unwrap());
 
         let source = Decoder::new(file).unwrap();
 
@@ -31,23 +31,25 @@ pub mod music {
     pub fn in_game_music() {
         let (_stream, stream_handle) = OutputStream::try_default().unwrap();
         let sink = Sink::try_new(&stream_handle).unwrap();
+        let file = BufReader::new(File::open("assets/Asteroids_GAME.mp3").unwrap());
+        let source = Decoder::new(file).unwrap();
+        sink.append(source);
+        sink.sleep_until_end();
 
         // The sound plays in a separate thread. This call will block the current thread until the sink
         // has finished playing all its queued sounds.
 
-        loop {
-            let received = rx.recv().unwrap();
+        //loop {
+            //let received = rx.recv().unwrap();
 
-            if received != None {
-                let file = BufReader::new(File::open("assets/Sample.ogg").unwrap());
-                let source = Decoder::new(file).unwrap();
+            //if received != None {
+                
                 sink.stop();
-                sink.append()
                 sink.play();
-            }
+            //}
 
            
-        }
+        
 
         // sink.sleep_until_end();
     }
