@@ -13,7 +13,7 @@ pub mod music {
         let (_stream, stream_handle) = OutputStream::try_default().unwrap();
 
         // Open Music File
-        let file = BufReader::new(File::open("assets/Sample.mp3").unwrap());
+        let file = BufReader::new(File::open("assets/Asteroids_GAME.mp3").unwrap());
 
         let source = Decoder::new(file).unwrap();
 
@@ -21,7 +21,7 @@ pub mod music {
         let music_file = stream_handle.play_raw(source.convert_samples());
 
         // Set length or end point for music stream
-        std::thread::sleep(std::time::Duration::from_secs(10));
+        std::thread::sleep(std::time::Duration::from_secs(100));
 
         thread::sleep(Duration::from_millis(500));
     }

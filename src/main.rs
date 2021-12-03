@@ -14,6 +14,7 @@ use crate::player::player::Player;
 
 use glam::Vec2;
 use sdl2::controller::Axis;
+use sdl2::controller::Button;
 use sdl2::controller::GameController;
 use sdl2::event::Event;
 use sdl2::image::LoadTexture;
@@ -90,6 +91,8 @@ fn main() -> Result<(), String> {
         ),
         angle: 0.0,
         velocity: Vec2::new(0.0, 0.0),
+        bullets: Vec::new(),
+        previous_shoot: false,
     };
 
     let game_controller_subsystem = sdl_context.game_controller()?;
@@ -174,6 +177,8 @@ fn main() -> Result<(), String> {
 
             rotate_left: keys.get(&Keycode::Q).is_some(),
             rotate_right: keys.get(&Keycode::E).is_some(),
+
+            shoot: keys.get(&Keycode::Space).is_some(),
         };
 
         let c_input: ControllerInput;
@@ -181,18 +186,21 @@ fn main() -> Result<(), String> {
         if let Some(c) = &controller {
             c_input = ControllerInput {
                 left: (
-                    clamp(c.axis(Axis::LeftX) as f32 / i16::MAX as f32),
+                    // clamp(c.axis(Axis::LeftY) as f32 / i16::MAX as f32),
+                    0.0,
                     clamp(c.axis(Axis::LeftY) as f32 / i16::MAX as f32),
                 ),
                 right: (
                     clamp(c.axis(Axis::RightX) as f32 / i16::MAX as f32),
                     clamp(c.axis(Axis::RightY) as f32 / i16::MAX as f32),
                 ),
+                shoot: c.button(Button::RightShoulder),
             };
         } else {
             c_input = ControllerInput {
                 left: (0.0, 0.0),
                 right: (0.0, 0.0),
+                shoot: false,
             };
         }
 
@@ -209,6 +217,28 @@ fn main() -> Result<(), String> {
             asteroid.render(&mut canvas);
         }
         player.render(&mut canvas);
+
+        for bullet in player.bullets.iter_mut() {
+            bullet.update(delta_seconds / 100.0, k_input, c_input);
+            bullet.render(&mut canvas);
+
+            asteroids.retain(|asteroid| {
+                let bullet_x = bullet.pos.x;
+                let bullet_y = bullet.pos.y;
+
+                let asteroid_x = asteroid.pos.x;
+                let asteroid_y = asteroid.pos.y;
+
+                if (bullet_x >= asteroid_x && bullet_x <= asteroid_x + 150.0)
+                    && (bullet_y >= asteroid_y && bullet_y <= asteroid_y + 150.0)
+                {
+                    println!("COLLIDE");
+                    return false;
+                } else {
+                    return true;
+                }
+            })
+        }
 
         canvas.present();
 

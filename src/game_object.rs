@@ -10,11 +10,13 @@ pub mod game_object {
         pub right: bool,
         pub rotate_left: bool,
         pub rotate_right: bool,
+        pub shoot: bool,
     }
     #[derive(Debug, Copy, Clone)]
     pub struct ControllerInput {
         pub left: (f32, f32),
         pub right: (f32, f32),
+        pub shoot: bool,
     }
 
     pub trait GameObject {

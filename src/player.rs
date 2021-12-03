@@ -6,6 +6,8 @@ pub mod player {
     use crate::KeyboardInput;
     use core::f32::consts::PI;
     use glam::Vec2;
+    use sdl2::pixels::Color;
+    use sdl2::rect::Point;
     use sdl2::rect::Rect;
     use sdl2::render::Texture;
     use sdl2::render::WindowCanvas;
@@ -27,13 +29,50 @@ pub mod player {
     const width: f32 = SCREEN_WIDTH as f32 * 1.10;
     const height: f32 = SCREEN_HEIGHT as f32 * 1.10;
 
+    pub struct Bullet {
+        pub pos: Vec2,
+        pub velocity: Vec2,
+    }
+
+    impl GameObject for Bullet {
+        fn update(
+            &mut self,
+            delta: f64,
+            keyboard_input: KeyboardInput,
+            controller_input: ControllerInput,
+        ) {
+            self.pos = self.pos + (self.velocity * delta as f32);
+        }
+    }
+
+    impl Renderable for Bullet {
+        fn set_sprite() {
+            todo!()
+        }
+        fn get_sprite() {
+            todo!()
+        }
+        fn set_position(&mut self, _: sdl2::rect::Rect) {
+            todo!()
+        }
+        fn get_position(&self) -> sdl2::rect::Rect {
+            todo!()
+        }
+        fn render(&self, canvas: &mut WindowCanvas) {
+            draw_point(canvas, self.pos);
+        }
+    }
+
     pub struct Player {
         pub texture: Texture,
         pub position: Rect,
         pub pos: Vec2,
         pub angle: f32,
         pub velocity: Vec2,
+        pub bullets: Vec<Bullet>,
+        pub previous_shoot: bool,
     }
+
     impl GameObject for Player {
         fn update(
             &mut self,
@@ -120,6 +159,36 @@ pub mod player {
                 position.x = SCREEN_WIDTH as f32 - position.x - PLAYER_SPRITE_WIDTH as f32;
             }
 
+            let shoot = keyboard_input.shoot || controller_input.shoot;
+
+            if !self.previous_shoot && shoot {
+                println!("shoot!");
+                let bullet_vec = Vec2::new(PLAYER_SPRITE_WIDTH as f32 / 2.0, 0.0);
+                let bullet_rect = set_vec_angle(bullet_vec, self.angle);
+
+                let ship_width = PLAYER_SPRITE_WIDTH as f32;
+                let ship_height = PLAYER_SPRITE_HEIGHT as f32;
+
+                // A
+                let ship_center = Vec2::new(
+                    self.pos.x + ship_width / 2.0,
+                    self.pos.y + ship_height / 2.0,
+                );
+
+                // B
+                let bullet_final = transform_to_ship_space(self, bullet_rect);
+
+                let run = -(ship_center.x - bullet_final.x);
+                let rise = -(ship_center.y - bullet_final.y);
+
+                let bullet = Bullet {
+                    pos: bullet_final,
+                    velocity: Vec2::new(run * 2.0, rise * 2.0) + velocity,
+                };
+                self.bullets.push(bullet);
+            }
+            self.previous_shoot = shoot;
+
             self.angle = new_angle;
             self.pos = position;
             self.velocity = velocity;
@@ -144,13 +213,6 @@ pub mod player {
                     false,
                 )
                 .ok();
-
-            canvas.draw_rect(Rect::new(
-                self.pos.x as i32 + (PLAYER_SPRITE_WIDTH as i32),
-                self.pos.y as i32 + (PLAYER_SPRITE_HEIGHT as i32 / 2) - 5,
-                20,
-                10,
-            ));
         }
         fn set_sprite() {
             todo!()
@@ -164,6 +226,27 @@ pub mod player {
         fn set_position(&mut self, new_position: Rect) {
             self.position = new_position;
         }
+    }
+
+    fn transform_to_ship_space(player: &Player, vec: Vec2) -> Vec2 {
+        let ship_width = PLAYER_SPRITE_WIDTH as f32;
+        let ship_height = PLAYER_SPRITE_HEIGHT as f32;
+        Vec2::new(
+            vec.x + player.pos.x + ship_width / 2.0,
+            vec.y + player.pos.y + ship_height / 2.0,
+        )
+    }
+
+    fn draw_point(canvas: &mut WindowCanvas, pos: Vec2) {
+        let scale = 10.0;
+        canvas.set_scale(scale, scale);
+        canvas.set_draw_color(Color::RGB(255, 210, 0));
+        canvas.draw_point(Point::new(
+            pos.x as i32 / scale as i32,
+            pos.y as i32 / scale as i32,
+        ));
+        canvas.set_draw_color(Color::RGB(0, 0, 0));
+        canvas.set_scale(1.0, 1.0);
     }
 
     fn set_vec_angle(vector: Vec2, angle: f32) -> Vec2 {
