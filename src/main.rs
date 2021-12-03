@@ -1,16 +1,30 @@
 mod asteroid;
+mod collide;
 mod game_object;
+mod graphics;
 mod input;
 mod music;
 mod player;
 
 extern crate sdl2;
 use crate::asteroid::asteroid::Asteroid;
+use crate::asteroid::asteroid::AsteroidVariant;
+use crate::collide::collide::is_colliding;
 use crate::game_object::game_object::ControllerInput;
 use crate::game_object::game_object::GameObject;
 use crate::game_object::game_object::KeyboardInput;
 use crate::game_object::game_object::Renderable;
+use crate::graphics::graphics::render_text;
+use crate::player::player::set_vec_angle;
+use crate::player::player::transform_to_ship_space;
+use crate::player::player::Bullet;
 use crate::player::player::Player;
+use crate::player::player::PLAYER_SPRITE_HEIGHT;
+use crate::player::player::PLAYER_SPRITE_WIDTH;
+use sdl2::render::Texture;
+use sdl2::render::TextureCreator;
+use sdl2::render::TextureQuery;
+use sdl2::ttf::Font;
 
 use glam::Vec2;
 use sdl2::controller::Axis;
@@ -35,8 +49,6 @@ use crate::music::music::main_menu_music;
 
 //defining constants
 //dimensions and title of the window to be rendered
-const SCREEN_WIDTH: u32 = 1280; //Width in pixels
-const SCREEN_HEIGHT: u32 = 720; //Height in pixels
 const WINDOW_TITLE: &str = "The Game";
 
 fn clamp(num: f32) -> f32 {
@@ -68,11 +80,13 @@ fn main() -> Result<(), String> {
     let _image_context = image::init(InitFlag::PNG | InitFlag::JPG)?;
 
     let window = video_subsystem
-        .window(WINDOW_TITLE, SCREEN_WIDTH, SCREEN_HEIGHT)
-        .position_centered()
+        .window(WINDOW_TITLE, 0, 0)
+        .fullscreen_desktop()
         .opengl()
         .build()
         .unwrap();
+
+    let mut window_size = window.size();
 
     let mut canvas: WindowCanvas = window.into_canvas().present_vsync().build().unwrap();
 
@@ -86,16 +100,18 @@ fn main() -> Result<(), String> {
         texture: texture_creator.load_texture("assets/ship.png")?,
         position: Rect::new(500, 500, 150, 150),
         pos: Vec2::new(
-            SCREEN_WIDTH as f32 / 2.0 - 150.0 / 2.0,
-            SCREEN_HEIGHT as f32 / 2.0 - 150.0 / 2.0,
+            window_size.0 as f32 / 2.0 - 150.0 / 2.0,
+            window_size.1 as f32 / 2.0 - 150.0 / 2.0,
         ),
         angle: 0.0,
         velocity: Vec2::new(0.0, 0.0),
-        bullets: Vec::new(),
         previous_shoot: false,
     };
 
     let game_controller_subsystem = sdl_context.game_controller()?;
+    let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
+    let mut font = ttf_context.load_font("assets/pressstart2p.ttf", 36)?;
+    font.set_style(sdl2::ttf::FontStyle::NORMAL);
 
     let available = game_controller_subsystem
         .num_joysticks()
@@ -104,7 +120,6 @@ fn main() -> Result<(), String> {
     println!("{} joysticks available", available);
 
     let mut controller: Option<GameController> = (0..available).find_map(|id| {
-        println!("con");
         if !game_controller_subsystem.is_game_controller(id) {
             println!("{} is not a game controller", id);
             return None;
@@ -114,8 +129,6 @@ fn main() -> Result<(), String> {
 
         match game_controller_subsystem.open(id) {
             Ok(c) => {
-                // We managed to find and open a game controller,
-                // exit the loop
                 println!("Success: opened \"{}\"", c.name());
                 Some(c)
             }
@@ -128,27 +141,31 @@ fn main() -> Result<(), String> {
 
     let now = Instant::now();
     let mut old_time: Duration = now.elapsed();
+
+    let mut fps_instant = Instant::now();
+
     // Starting the main menu soundtrack
     let music_thread = thread::spawn(|| main_menu_music());
 
     let mut asteroids: Vec<Asteroid> = Vec::new();
-    asteroids.push(Asteroid::new_with_position(
-        texture_creator.load_texture("assets/asteroid.png")?,
-        Vec2::new(50.0, 50.0),
-    ));
 
-    asteroids.push(Asteroid::new_with_position(
-        texture_creator.load_texture("assets/asteroid.png")?,
-        Vec2::new(150.0, 150.0),
-    ));
+    for n in 1..30 {
+        asteroids.push(Asteroid::new(
+            texture_creator.load_texture("assets/asteroid.png")?,
+        ));
+    }
 
-    asteroids.push(Asteroid::new_with_position(
-        texture_creator.load_texture("assets/asteroid.png")?,
-        Vec2::new(500.0, 500.0),
-    ));
+    let mut previous_shoot = false;
+    let mut bullets: Vec<Bullet> = Vec::new();
+
+    let mut frames: f64 = 0.0;
+    let mut frames_per_second: f64 = 0.0;
+
+    let mut score = 0;
 
     //game loop
     'running: loop {
+        frames = frames + 1.0;
         //handling input
         for event in event_pump.poll_iter() {
             match event {
@@ -210,41 +227,146 @@ fn main() -> Result<(), String> {
         canvas.clear();
         canvas.set_draw_color(Color::RGB(0, 0, 0));
 
-        player.update(delta_seconds / 100.0, k_input, c_input);
+        player.update(window_size, delta_seconds / 100.0, k_input, c_input);
 
         for asteroid in asteroids.iter_mut() {
-            asteroid.update(delta_seconds / 100.0, k_input, c_input);
+            asteroid.update(window_size, delta_seconds / 100.0, k_input, c_input);
             asteroid.render(&mut canvas);
         }
         player.render(&mut canvas);
 
-        for bullet in player.bullets.iter_mut() {
-            bullet.update(delta_seconds / 100.0, k_input, c_input);
+        let shoot = k_input.shoot || c_input.shoot;
+        if !previous_shoot && shoot {
+            let bullet_vec = Vec2::new(PLAYER_SPRITE_WIDTH as f32 / 2.0, 0.0);
+            let bullet_rect = set_vec_angle(bullet_vec, player.angle);
+
+            let ship_width = PLAYER_SPRITE_WIDTH as f32;
+            let ship_height = PLAYER_SPRITE_HEIGHT as f32;
+
+            // A
+            let ship_center = Vec2::new(
+                player.pos.x + ship_width / 2.0,
+                player.pos.y + ship_height / 2.0,
+            );
+
+            // B
+            let bullet_final = transform_to_ship_space(&player, bullet_rect);
+
+            let run = -(ship_center.x - bullet_final.x);
+            let rise = -(ship_center.y - bullet_final.y);
+
+            let bullet = Bullet {
+                pos: bullet_final,
+                velocity: Vec2::new(run * 2.0, rise * 2.0) + player.velocity,
+            };
+            bullets.push(bullet);
+        }
+        previous_shoot = shoot;
+
+        for bullet in bullets.iter_mut() {
+            bullet.update(window_size, delta_seconds / 100.0, k_input, c_input);
             bullet.render(&mut canvas);
-
-            asteroids.retain(|asteroid| {
-                let bullet_x = bullet.pos.x;
-                let bullet_y = bullet.pos.y;
-
-                let asteroid_x = asteroid.pos.x;
-                let asteroid_y = asteroid.pos.y;
-
-                if (bullet_x >= asteroid_x && bullet_x <= asteroid_x + 150.0)
-                    && (bullet_y >= asteroid_y && bullet_y <= asteroid_y + 150.0)
-                {
-                    println!("COLLIDE");
-                    return false;
-                } else {
-                    return true;
-                }
-            })
         }
 
+        bullets.retain(|bullet| {
+            let mut retain_bullet = true;
+
+            let mut asteroids_to_create: Vec<Asteroid> = Vec::new();
+            asteroids.retain(|asteroid| {
+                let mut retain_asteroid = true;
+                if is_colliding(bullet, asteroid) {
+                    println!("COLLIDE");
+
+                    match get_new_variant(asteroid) {
+                        None => {}
+                        Some(new_variant) => {
+                            let mut new_asteroid = Asteroid::new_with_position(
+                                texture_creator.load_texture("assets/asteroid.png").unwrap(),
+                                asteroid.pos,
+                            );
+                            new_asteroid.variant = new_variant;
+                            asteroids_to_create.push(new_asteroid);
+                        }
+                    };
+
+                    match get_new_variant(asteroid) {
+                        None => {}
+                        Some(new_variant) => {
+                            let mut new_asteroid = Asteroid::new_with_position(
+                                texture_creator.load_texture("assets/asteroid.png").unwrap(),
+                                asteroid.pos,
+                            );
+                            new_asteroid.variant = new_variant;
+                            asteroids_to_create.push(new_asteroid);
+                        }
+                    };
+
+                    score += 10;
+
+                    // Destroy both
+                    retain_asteroid = false;
+                    retain_bullet = false;
+                }
+                retain_asteroid
+            });
+
+            asteroids.extend(asteroids_to_create);
+
+            retain_bullet
+        });
+
+        canvas.set_draw_color(Color::RGBA(195, 217, 255, 255));
+
+        let score_texture = render_text(
+            format!("score: {}", score),
+            &font,
+            &mut canvas,
+            &texture_creator,
+        )?;
+
+        let score_texture_query = score_texture.query();
+        let score_target = Rect::new(
+            (window_size.0 / 2) as i32 - (score_texture_query.width / 2) as i32,
+            0,
+            score_texture_query.width,
+            score_texture_query.height,
+        );
+        canvas.copy(&score_texture, None, score_target);
+
+        let fps_texture = render_text(
+            format!("fps: {}", frames_per_second as i32),
+            &font,
+            &mut canvas,
+            &texture_creator,
+        )?;
+
+        let fps_texture_query = fps_texture.query();
+        let fps_target = Rect::new(0, 0, fps_texture_query.width, fps_texture_query.height);
+        canvas.copy(&fps_texture, None, fps_target);
+
+        canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas.present();
+
+        // Calculate FPS every second
+        let fps_duration = fps_instant.elapsed().as_millis() as f64 / 1000.0;
+        if fps_duration > 1.0 {
+            let elapsed = fps_duration;
+            frames_per_second = frames / elapsed;
+            fps_instant = Instant::now();
+            frames = 0.0;
+        }
 
         old_time = now.elapsed();
         thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
     }
 
     return Ok(());
+}
+
+fn get_new_variant(asteroid: &Asteroid) -> Option<AsteroidVariant> {
+    match asteroid.variant {
+        AsteroidVariant::Large => Some(AsteroidVariant::Medium),
+        AsteroidVariant::Medium => Some(AsteroidVariant::Small),
+        AsteroidVariant::Small => None,
+    }
 }

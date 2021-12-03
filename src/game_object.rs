@@ -22,6 +22,7 @@ pub mod game_object {
     pub trait GameObject {
         fn update(
             &mut self,
+            window_size: (u32, u32),
             delta: f64,
             keyboard_input: KeyboardInput,
             controller_input: ControllerInput,

@@ -13,9 +13,6 @@ pub mod player {
     use sdl2::render::WindowCanvas;
     use std::ops::Add;
 
-    pub const SCREEN_WIDTH: u32 = 1280; //Width in pixels
-    pub const SCREEN_HEIGHT: u32 = 720; //Height in pixels
-
     //dimensions of the player sprite
     pub const PLAYER_SPRITE_WIDTH: u32 = 75; //Width in pixels
     pub const PLAYER_SPRITE_HEIGHT: u32 = 58; //Height in pixels
@@ -26,9 +23,6 @@ pub mod player {
 
     const DRAG: f32 = 0.075; //Drag multiplier (applied to velocity)
 
-    const width: f32 = SCREEN_WIDTH as f32 * 1.10;
-    const height: f32 = SCREEN_HEIGHT as f32 * 1.10;
-
     pub struct Bullet {
         pub pos: Vec2,
         pub velocity: Vec2,
@@ -37,6 +31,7 @@ pub mod player {
     impl GameObject for Bullet {
         fn update(
             &mut self,
+            window_size: (u32, u32),
             delta: f64,
             keyboard_input: KeyboardInput,
             controller_input: ControllerInput,
@@ -56,7 +51,7 @@ pub mod player {
             todo!()
         }
         fn get_position(&self) -> sdl2::rect::Rect {
-            todo!()
+            Rect::new(self.pos.x as i32, self.pos.y as i32, 30, 30)
         }
         fn render(&self, canvas: &mut WindowCanvas) {
             draw_point(canvas, self.pos);
@@ -69,13 +64,13 @@ pub mod player {
         pub pos: Vec2,
         pub angle: f32,
         pub velocity: Vec2,
-        pub bullets: Vec<Bullet>,
         pub previous_shoot: bool,
     }
 
     impl GameObject for Player {
         fn update(
             &mut self,
+            window_size: (u32, u32),
             delta: f64,
             keyboard_input: KeyboardInput,
             controller_input: ControllerInput,
@@ -141,53 +136,23 @@ pub mod player {
             let mut position = new_pos + (velocity * delta as f32);
 
             // TODO: Run this code on every game object that is a physics object
-            if position.x > (width + 80.0) {
+            if position.x > (window_size.0 as f32 + 80.0) {
                 // Right of the screen
                 position.x = -80.0;
-                position.y = SCREEN_HEIGHT as f32 - position.y - PLAYER_SPRITE_WIDTH as f32;
+                position.y = window_size.1 as f32 - position.y - PLAYER_SPRITE_WIDTH as f32;
             } else if position.x < -80.0 {
                 // Left of the screen
-                position.x = width + 80.0;
-                position.y = SCREEN_HEIGHT as f32 - position.y - PLAYER_SPRITE_WIDTH as f32;
-            } else if position.y > (height + 80.0) {
+                position.x = window_size.0 as f32 + 80.0;
+                position.y = window_size.1 as f32 - position.y - PLAYER_SPRITE_WIDTH as f32;
+            } else if position.y > (window_size.1 as f32 + 80.0) {
                 // Bottom of the screen
                 position.y = -80.0;
-                position.x = SCREEN_WIDTH as f32 - position.x - PLAYER_SPRITE_WIDTH as f32;
+                position.x = window_size.0 as f32 - position.x - PLAYER_SPRITE_WIDTH as f32;
             } else if position.y < -80.0 {
                 // Top of the screen
-                position.y = height + 80.0;
-                position.x = SCREEN_WIDTH as f32 - position.x - PLAYER_SPRITE_WIDTH as f32;
+                position.y = window_size.1 as f32 + 80.0;
+                position.x = window_size.0 as f32 - position.x - PLAYER_SPRITE_WIDTH as f32;
             }
-
-            let shoot = keyboard_input.shoot || controller_input.shoot;
-
-            if !self.previous_shoot && shoot {
-                println!("shoot!");
-                let bullet_vec = Vec2::new(PLAYER_SPRITE_WIDTH as f32 / 2.0, 0.0);
-                let bullet_rect = set_vec_angle(bullet_vec, self.angle);
-
-                let ship_width = PLAYER_SPRITE_WIDTH as f32;
-                let ship_height = PLAYER_SPRITE_HEIGHT as f32;
-
-                // A
-                let ship_center = Vec2::new(
-                    self.pos.x + ship_width / 2.0,
-                    self.pos.y + ship_height / 2.0,
-                );
-
-                // B
-                let bullet_final = transform_to_ship_space(self, bullet_rect);
-
-                let run = -(ship_center.x - bullet_final.x);
-                let rise = -(ship_center.y - bullet_final.y);
-
-                let bullet = Bullet {
-                    pos: bullet_final,
-                    velocity: Vec2::new(run * 2.0, rise * 2.0) + velocity,
-                };
-                self.bullets.push(bullet);
-            }
-            self.previous_shoot = shoot;
 
             self.angle = new_angle;
             self.pos = position;
@@ -228,7 +193,7 @@ pub mod player {
         }
     }
 
-    fn transform_to_ship_space(player: &Player, vec: Vec2) -> Vec2 {
+    pub fn transform_to_ship_space(player: &Player, vec: Vec2) -> Vec2 {
         let ship_width = PLAYER_SPRITE_WIDTH as f32;
         let ship_height = PLAYER_SPRITE_HEIGHT as f32;
         Vec2::new(
@@ -249,7 +214,7 @@ pub mod player {
         canvas.set_scale(1.0, 1.0);
     }
 
-    fn set_vec_angle(vector: Vec2, angle: f32) -> Vec2 {
+    pub fn set_vec_angle(vector: Vec2, angle: f32) -> Vec2 {
         let new_x = vector.x * angle.cos() - vector.y * angle.sin();
         let new_y = vector.x * angle.sin() + vector.y * angle.cos();
 
