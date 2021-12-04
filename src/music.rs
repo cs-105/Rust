@@ -42,7 +42,7 @@ pub mod music {
         //loop {
             //let received = rx.recv().unwrap();
 
-            //if received != None {
+          //  if received != None {
                 
                 sink.stop();
                 sink.play();
