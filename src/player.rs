@@ -186,7 +186,12 @@ pub mod player {
             todo!()
         }
         fn get_position(&self) -> Rect {
-            self.position
+            Rect::new(
+                self.pos.x as i32,
+                self.pos.y as i32,
+                PLAYER_SPRITE_WIDTH as u32,
+                PLAYER_SPRITE_HEIGHT as u32,
+            )
         }
         fn set_position(&mut self, new_position: Rect) {
             self.position = new_position;

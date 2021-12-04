@@ -80,7 +80,7 @@ fn main() -> Result<(), String> {
     let _image_context = image::init(InitFlag::PNG | InitFlag::JPG)?;
 
     let window = video_subsystem
-        .window(WINDOW_TITLE, 0, 0)
+        .window(WINDOW_TITLE, 1920, 1080)
         .fullscreen_desktop()
         .opengl()
         .build()
@@ -149,7 +149,7 @@ fn main() -> Result<(), String> {
 
     let mut asteroids: Vec<Asteroid> = Vec::new();
 
-    for n in 1..30 {
+    for n in 1..20 {
         asteroids.push(Asteroid::new(
             texture_creator.load_texture("assets/asteroid.png")?,
         ));
@@ -162,6 +162,9 @@ fn main() -> Result<(), String> {
     let mut frames_per_second: f64 = 0.0;
 
     let mut score = 0;
+
+    let mut died_at = Instant::now();
+    let mut dead = false;
 
     //game loop
     'running: loop {
@@ -211,7 +214,8 @@ fn main() -> Result<(), String> {
                     clamp(c.axis(Axis::RightX) as f32 / i16::MAX as f32),
                     clamp(c.axis(Axis::RightY) as f32 / i16::MAX as f32),
                 ),
-                shoot: c.button(Button::RightShoulder),
+                shoot: c.button(Button::RightShoulder)
+                    || clamp(c.axis(Axis::TriggerRight) as f32 / i16::MAX as f32) > 0.5,
             };
         } else {
             c_input = ControllerInput {
@@ -227,16 +231,23 @@ fn main() -> Result<(), String> {
         canvas.clear();
         canvas.set_draw_color(Color::RGB(0, 0, 0));
 
-        player.update(window_size, delta_seconds / 100.0, k_input, c_input);
+        if !dead {
+            player.update(window_size, delta_seconds / 100.0, k_input, c_input);
+            player.render(&mut canvas);
 
-        for asteroid in asteroids.iter_mut() {
-            asteroid.update(window_size, delta_seconds / 100.0, k_input, c_input);
+            for asteroid in asteroids.iter_mut() {
+                asteroid.update(window_size, delta_seconds / 100.0, k_input, c_input);
+            }
+        } else if died_at.elapsed().as_secs() >= 1 {
+            dead = false;
+        }
+
+        for asteroid in asteroids.iter() {
             asteroid.render(&mut canvas);
         }
-        player.render(&mut canvas);
 
         let shoot = k_input.shoot || c_input.shoot;
-        if !previous_shoot && shoot {
+        if !previous_shoot && shoot && !dead {
             let bullet_vec = Vec2::new(PLAYER_SPRITE_WIDTH as f32 / 2.0, 0.0);
             let bullet_rect = set_vec_angle(bullet_vec, player.angle);
 
@@ -263,20 +274,62 @@ fn main() -> Result<(), String> {
         }
         previous_shoot = shoot;
 
-        for bullet in bullets.iter_mut() {
-            bullet.update(window_size, delta_seconds / 100.0, k_input, c_input);
-            bullet.render(&mut canvas);
+        if !dead {
+            for bullet in bullets.iter_mut() {
+                bullet.update(window_size, delta_seconds / 100.0, k_input, c_input);
+                bullet.render(&mut canvas);
+            }
+        } else {
+            bullets = Vec::new();
         }
 
-        bullets.retain(|bullet| {
-            let mut retain_bullet = true;
+        let mut asteroids_to_create: Vec<Asteroid> = Vec::new();
+        asteroids.retain(|asteroid| {
+            let mut retain_asteroid = true;
 
-            let mut asteroids_to_create: Vec<Asteroid> = Vec::new();
-            asteroids.retain(|asteroid| {
-                let mut retain_asteroid = true;
+            if is_colliding(&player, asteroid) {
+                println!("Collding!");
+                player.pos = Vec2::new(
+                    window_size.0 as f32 / 2.0 - 150.0 / 2.0,
+                    window_size.1 as f32 / 2.0 - 150.0 / 2.0,
+                );
+                player.velocity = Vec2::new(0.0, 0.0);
+                player.angle = 0.0;
+                died_at = Instant::now();
+                dead = true;
+
+                match get_new_variant(asteroid) {
+                    None => {}
+                    Some(new_variant) => {
+                        let mut new_asteroid = Asteroid::new_with_position(
+                            texture_creator.load_texture("assets/asteroid.png").unwrap(),
+                            asteroid.pos,
+                        );
+                        new_asteroid.variant = new_variant;
+                        asteroids_to_create.push(new_asteroid);
+                    }
+                };
+
+                match get_new_variant(asteroid) {
+                    None => {}
+                    Some(new_variant) => {
+                        let mut new_asteroid = Asteroid::new_with_position(
+                            texture_creator.load_texture("assets/asteroid.png").unwrap(),
+                            asteroid.pos,
+                        );
+                        new_asteroid.variant = new_variant;
+                        asteroids_to_create.push(new_asteroid);
+                    }
+                };
+
+                // Destroy asteroid
+                retain_asteroid = false;
+            }
+
+            bullets.retain(|bullet| {
+                let mut retain_bullet = true;
                 if is_colliding(bullet, asteroid) {
                     println!("COLLIDE");
-
                     match get_new_variant(asteroid) {
                         None => {}
                         Some(new_variant) => {
@@ -307,13 +360,13 @@ fn main() -> Result<(), String> {
                     retain_asteroid = false;
                     retain_bullet = false;
                 }
-                retain_asteroid
+                retain_bullet
             });
 
-            asteroids.extend(asteroids_to_create);
-
-            retain_bullet
+            retain_asteroid
         });
+
+        asteroids.extend(asteroids_to_create);
 
         canvas.set_draw_color(Color::RGBA(195, 217, 255, 255));
 
@@ -343,6 +396,19 @@ fn main() -> Result<(), String> {
         let fps_texture_query = fps_texture.query();
         let fps_target = Rect::new(0, 0, fps_texture_query.width, fps_texture_query.height);
         canvas.copy(&fps_texture, None, fps_target);
+
+        if dead {
+            let dead_texture =
+                render_text("DEAD".to_string(), &font, &mut canvas, &texture_creator)?;
+            let dead_texture_query = dead_texture.query();
+            let dead_target = Rect::new(
+                (window_size.0 / 2) as i32 - (dead_texture_query.width / 2) as i32,
+                (window_size.1 / 2) as i32 - (dead_texture_query.height / 2) as i32,
+                dead_texture_query.width,
+                dead_texture_query.height,
+            );
+            canvas.copy(&dead_texture, None, dead_target);
+        }
 
         canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas.present();
