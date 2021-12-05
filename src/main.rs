@@ -36,6 +36,7 @@ use std::sync::{Arc, Mutex};
 //imports from music file
 use crate::music::music::in_game_music;
 use crate::music::music::main_menu_music;
+use crate::music::music::laser_sound;
 
 //defining constants
 //dimensions and title of the window to be rendered
@@ -141,14 +142,17 @@ fn main() -> Result<(), String> {
     let mut old_time: Duration = now.elapsed();
 
     // Starting the main menu soundtrack
-    thread::spawn(move|| {tx.send(String::from("nope")).unwrap();
+    let handle = thread::spawn(move|| {tx.send(String::from("nope")).unwrap();
     in_game_music();    
     });
+
+    
 
 
     //game loop
     'running: loop {
         //handling input
+
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit { .. }
@@ -210,15 +214,13 @@ fn main() -> Result<(), String> {
         player.render(&mut canvas);
 
         canvas.present();
-
+        
         old_time = now.elapsed();
         thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
 
     }
 
     
-    let recieved = rx.try_recv().unwrap();
-    println!("Got recieved: {}", recieved);
 
     return Ok(());
 }
