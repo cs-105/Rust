@@ -27,10 +27,16 @@ use std::collections::HashSet;
 use std::thread;
 use std::time::Duration;
 use std::time::Instant;
+use std::io;
+use std::io::sink;
+use std::sync::mpsc::{Sender, Receiver};
+use std::sync::mpsc::channel;
+use std::sync::{Arc, Mutex};
 
 //imports from music file
 use crate::music::music::in_game_music;
 use crate::music::music::main_menu_music;
+use crate::music::music::laser_sound;
 
 //defining constants
 //dimensions and title of the window to be rendered
@@ -48,6 +54,12 @@ fn clamp(num: f32) -> f32 {
 
 //TODO: Go through and outsource certain things to different files
 fn main() -> Result<(), String> {
+
+    // //create channel for thread info passing
+    let (tx, rx) = channel();
+
+    let thread_variable = Arc::new(Mutex::new("Oh_boiii".to_string()));
+
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
@@ -128,12 +140,19 @@ fn main() -> Result<(), String> {
 
     let now = Instant::now();
     let mut old_time: Duration = now.elapsed();
+
     // Starting the main menu soundtrack
-    let music_thread = thread::spawn(|| main_menu_music());
+    let handle = thread::spawn(move|| {tx.send(String::from("nope")).unwrap();
+    in_game_music();    
+    });
+
     
+
+
     //game loop
     'running: loop {
         //handling input
+
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit { .. }
@@ -195,10 +214,13 @@ fn main() -> Result<(), String> {
         player.render(&mut canvas);
 
         canvas.present();
-
+        
         old_time = now.elapsed();
         thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
+
     }
+
+    
 
     return Ok(());
 }

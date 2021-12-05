@@ -34,23 +34,22 @@ pub mod music {
         let file = BufReader::new(File::open("assets/Asteroids_GAME.mp3").unwrap());
         let source = Decoder::new(file).unwrap();
         sink.append(source);
-        sink.sleep_until_end();
-
-        // The sound plays in a separate thread. This call will block the current thread until the sink
-        // has finished playing all its queued sounds.
-
-        //loop {
-            //let received = rx.recv().unwrap();
-
-            //if received != None {
-                
-                sink.stop();
-                sink.play();
-            //}
-
-           
+        sink.sleep_until_end();        
         
 
         // sink.sleep_until_end();
+    }
+
+    pub fn laser_sound() {
+        let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+        let sink = Sink::try_new(&stream_handle).unwrap();
+        let file2 = BufReader::new(File::open("assets/Laser_Sound.mp3").unwrap());
+        let source2 = Decoder::new(file2).unwrap();
+        sink.append(source2);
+        sink.sleep_until_end();
+         
+        
+
+            // sink.sleep_until_end();
     }
 }
