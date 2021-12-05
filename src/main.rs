@@ -31,6 +31,7 @@ use std::io;
 use std::io::sink;
 use std::sync::mpsc::{Sender, Receiver};
 use std::sync::mpsc::channel;
+use std::sync::{Arc, Mutex};
 
 //imports from music file
 use crate::music::music::in_game_music;
@@ -53,8 +54,10 @@ fn clamp(num: f32) -> f32 {
 //TODO: Go through and outsource certain things to different files
 fn main() -> Result<(), String> {
 
-    //create channel for thread info passing
+    // //create channel for thread info passing
     let (tx, rx) = channel();
+
+    let thread_variable = Arc::new(Mutex::new("Oh_boiii".to_string()));
 
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
@@ -137,20 +140,11 @@ fn main() -> Result<(), String> {
     let now = Instant::now();
     let mut old_time: Duration = now.elapsed();
 
-    
     // Starting the main menu soundtrack
-    let music_thread = thread::spawn(move|| {in_game_music();
-        tx.send("NO").unwrap();
+    thread::spawn(move|| {tx.send(String::from("nope")).unwrap();
+    in_game_music();    
     });
 
-    let mut input = String::new();
-    io::stdin().read_line(&mut input)
-        .expect("failed to read line");
-
-    if input.trim() == "q" {
-       println!("wow") ;
-       rx.recv().unwrap();
-    }
 
     //game loop
     'running: loop {
@@ -219,7 +213,12 @@ fn main() -> Result<(), String> {
 
         old_time = now.elapsed();
         thread::sleep(Duration::new(0, 1_000_000_000u32 / 60));
+
     }
+
+    
+    let recieved = rx.try_recv().unwrap();
+    println!("Got recieved: {}", recieved);
 
     return Ok(());
 }
