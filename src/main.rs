@@ -41,7 +41,11 @@ use sdl2::rect::Rect;
 use sdl2::render::WindowCanvas;
 use sdl2::video::GLProfile;
 use std::collections::HashSet;
+use std::io;
+use std::io::sink;
 use std::sync::mpsc;
+use std::sync::mpsc::channel;
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 use std::time::Instant;
@@ -64,6 +68,11 @@ fn clamp(num: f32) -> f32 {
 
 //TODO: Go through and outsource certain things to different files
 fn main() -> Result<(), String> {
+    // //create channel for thread info passing
+    let (tx, rx) = channel();
+
+    let thread_variable = Arc::new(Mutex::new("Oh_boiii".to_string()));
+
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
@@ -174,6 +183,7 @@ fn main() -> Result<(), String> {
     'running: loop {
         frames = frames + 1.0;
         //handling input
+
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit { .. }

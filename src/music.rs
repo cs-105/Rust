@@ -1,52 +1,64 @@
 pub mod music {
-
-    use futures::executor::block_on;
-    use rodio::source::SamplesConverter;
-    use rodio::source::{SineWave, Source};
+    use rodio::source::Source;
     use rodio::{Decoder, OutputStream, Sink};
     use std::fs::File;
     use std::io::BufReader;
     use std::sync::mpsc;
-    use std::thread;
-    use std::time::Duration;
+
+    pub struct SoundCommand {}
+
+    pub enum SoundType {
+        Music,
+        SoundEffect,
+    }
 
     pub struct Sound {
         filename: String,
-        source: Decoder<BufReader<File>>,
+        source: BufReader<File>,
+        sound_type: SoundType,
     }
 
     impl Sound {
-        pub fn new(filename: &str) -> Self {
+        pub fn new(filename: &str, sound_type: SoundType) -> Self {
             let file = BufReader::new(File::open(filename).unwrap());
-            let source = Decoder::new(file).unwrap();
             Sound {
                 filename: filename.to_string(),
-                source: source,
+                source: file,
+                sound_type: sound_type,
             }
         }
     }
 
-    pub fn main_menu_music(tx: mpsc::Receiver<Sound>) {
+    pub fn start_sound_thread(tx: mpsc::Receiver<Sound>) {
         // Make Stream Handle
         let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+        let mut sink = Sink::try_new(&stream_handle).unwrap();
 
         // Open Music File
-
         loop {
+            // Receive new messages in thread
             for val in tx.recv().iter() {
-                let file = BufReader::new(File::open(val.filename.clone()).unwrap());
-                let source = Decoder::new(file).unwrap();
-                // Decode the Music File
-                let music_file = stream_handle.play_raw(source.convert_samples());
+                match val.sound_type {
+                    // If music, then stop the music currently playing and start again
+                    SoundType::Music => {
+                        let file = BufReader::new(File::open(val.filename.clone()).unwrap());
+                        let source = Decoder::new(file).unwrap();
+                        sink.stop();
+                        drop(&sink);
+                        sink = Sink::try_new(&stream_handle).unwrap();
+                        sink.set_volume(4.0);
+                        // Decode the Music File
+                        sink.append(source);
+                        sink.play();
+                    }
+                    // If sound effect, then just play it until it ends without stopping the music
+                    SoundType::SoundEffect => {
+                        let file = BufReader::new(File::open(val.filename.clone()).unwrap());
+                        let source = Decoder::new(file).unwrap();
+                        stream_handle.play_raw(source.convert_samples());
+                    }
+                }
             }
         }
-
-        // Set length or end point for music stream
-        std::thread::sleep(std::time::Duration::from_secs(100));
-    }
-
-    pub fn in_game_music() {
-        let (_stream, stream_handle) = OutputStream::try_default().unwrap();
-        let sink = Sink::try_new(&stream_handle).unwrap();
     }
 }
