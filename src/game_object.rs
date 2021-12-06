@@ -19,7 +19,11 @@ pub mod game_object {
         pub shoot: bool,
     }
 
-    pub trait GameObject {
+    pub trait AsGameObject {
+        fn as_game_object(&mut self) -> &mut dyn GameObject;
+    }
+
+    pub trait GameObject: AsGameObject {
         fn update(
             &mut self,
             window_size: (u32, u32),
@@ -29,11 +33,15 @@ pub mod game_object {
         );
     }
 
-    pub trait Renderable {
-        fn set_sprite();
-        fn get_sprite();
+    pub trait AsRenderable {
+        fn as_renderable(&mut self) -> &mut dyn Renderable;
+    }
+
+    pub trait Renderable: AsRenderable {
         fn get_position(&self) -> Rect;
         fn set_position(&mut self, new_position: Rect);
-        fn render(&self, render: &mut WindowCanvas);
+        fn render(&mut self, render: &mut WindowCanvas);
     }
+
+    pub trait AsGameObjectAndRenderable: AsGameObject + AsRenderable {}
 }

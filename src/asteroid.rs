@@ -1,4 +1,7 @@
 pub mod asteroid {
+    use crate::game_object::game_object::AsGameObject;
+    use crate::game_object::game_object::AsGameObjectAndRenderable;
+    use crate::game_object::game_object::AsRenderable;
     use crate::game_object::game_object::GameObject;
     use crate::game_object::game_object::Renderable;
     use crate::player::player::PLAYER_SPRITE_WIDTH;
@@ -34,8 +37,8 @@ pub mod asteroid {
             Asteroid {
                 texture: texture,
                 pos: Vec2::new(
-                    rng.gen_range(0.0..5000.0 as f32),
-                    rng.gen_range(0.0..5000.0 as f32),
+                    rng.gen_range(200.0..2000.0 as f32),
+                    rng.gen_range(200.0..2000.0 as f32),
                 ),
                 angle: 0.0,
                 variant: AsteroidVariant::Large,
@@ -85,21 +88,21 @@ pub mod asteroid {
             let mut force = Vec2::new(0.0, 0.0);
             force = force.add(self.velocity);
 
-            if position.x > (window_size.0 as f32 + 100.0) {
+            if position.x > (window_size.0 as f32 + 80.0) {
                 // Right of the screen
-                position.x = -100.0;
+                position.x = -80.0;
                 position.y = window_size.1 as f32 - position.y - PLAYER_SPRITE_WIDTH as f32;
-            } else if position.x < -100.0 {
+            } else if position.x < -80.0 {
                 // Left of the screen
-                position.x = window_size.0 as f32 + 100.0;
+                position.x = window_size.0 as f32 + 80.0;
                 position.y = window_size.1 as f32 - position.y - PLAYER_SPRITE_WIDTH as f32;
-            } else if position.y > (window_size.1 as f32 + 100.0) {
+            } else if position.y > (window_size.1 as f32 + 80.0) {
                 // Bottom of the screen
-                position.y = -100.0;
+                position.y = -80.0;
                 position.x = window_size.0 as f32 - position.x - PLAYER_SPRITE_WIDTH as f32;
-            } else if position.y < -100.0 {
+            } else if position.y < -80.0 {
                 // Top of the screen
-                position.y = window_size.1 as f32 + 100.0;
+                position.y = window_size.1 as f32 + 80.0;
                 position.x = window_size.0 as f32 - position.x - PLAYER_SPRITE_WIDTH as f32;
             }
 
@@ -113,13 +116,21 @@ pub mod asteroid {
         }
     }
 
+    impl AsGameObject for Asteroid {
+        fn as_game_object(&mut self) -> &mut dyn GameObject {
+            self
+        }
+    }
+
+    impl AsRenderable for Asteroid {
+        fn as_renderable(&mut self) -> &mut dyn Renderable {
+            self
+        }
+    }
+
+    impl AsGameObjectAndRenderable for Asteroid {}
+
     impl Renderable for Asteroid {
-        fn set_sprite() {
-            todo!()
-        }
-        fn get_sprite() {
-            todo!()
-        }
         fn get_position(&self) -> sdl2::rect::Rect {
             Rect::new(
                 self.pos.x as i32,
@@ -131,7 +142,7 @@ pub mod asteroid {
         fn set_position(&mut self, _: sdl2::rect::Rect) {
             todo!()
         }
-        fn render(&self, canvas: &mut WindowCanvas) {
+        fn render(&mut self, canvas: &mut WindowCanvas) {
             let size = match self.variant {
                 AsteroidVariant::Large => 150,
                 AsteroidVariant::Medium => 100,

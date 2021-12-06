@@ -1,8 +1,10 @@
 mod asteroid;
 mod collide;
+mod game;
 mod game_object;
 mod graphics;
 mod input;
+mod main_menu;
 mod music;
 mod player;
 
@@ -10,21 +12,19 @@ extern crate sdl2;
 use crate::asteroid::asteroid::Asteroid;
 use crate::asteroid::asteroid::AsteroidVariant;
 use crate::collide::collide::is_colliding;
+use crate::game::game::Game;
 use crate::game_object::game_object::ControllerInput;
 use crate::game_object::game_object::GameObject;
 use crate::game_object::game_object::KeyboardInput;
 use crate::game_object::game_object::Renderable;
 use crate::graphics::graphics::render_text;
+use crate::main_menu::main_menu::MainMenu;
 use crate::player::player::set_vec_angle;
 use crate::player::player::transform_to_ship_space;
 use crate::player::player::Bullet;
 use crate::player::player::Player;
 use crate::player::player::PLAYER_SPRITE_HEIGHT;
 use crate::player::player::PLAYER_SPRITE_WIDTH;
-use sdl2::render::Texture;
-use sdl2::render::TextureCreator;
-use sdl2::render::TextureQuery;
-use sdl2::ttf::Font;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
 
@@ -47,9 +47,8 @@ use std::time::Duration;
 use std::time::Instant;
 
 //imports from music file
-use crate::music::music::in_game_music;
-use crate::music::music::main_menu_music;
-use crate::music::music::Sound;
+use crate::music::music::start_sound_thread;
+use crate::music::music::{Sound, SoundType};
 
 //defining constants
 //dimensions and title of the window to be rendered
@@ -115,10 +114,9 @@ fn main() -> Result<(), String> {
     let (tx, rx): (Sender<Sound>, Receiver<Sound>) = mpsc::channel();
 
     // Starting the main menu soundtrack
-    let music_thread = thread::spawn(move || main_menu_music(rx));
-    let sound = Sound::new("assets/Asteroids_GAME.mp3");
-
-    tx.send(sound);
+    let music_thread = thread::spawn(move || start_sound_thread(rx));
+    let main_menu_sound = Sound::new("assets/Asteroids_MAIN_MENU.mp3", SoundType::Music);
+    tx.send(main_menu_sound);
 
     let game_controller_subsystem = sdl_context.game_controller()?;
     let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
@@ -164,16 +162,13 @@ fn main() -> Result<(), String> {
         ));
     }
 
-    let mut previous_shoot = false;
-    let mut bullets: Vec<Bullet> = Vec::new();
-
     let mut frames: f64 = 0.0;
     let mut frames_per_second: f64 = 0.0;
 
-    let mut score = 0;
+    let mut main_menu = MainMenu::new(window_size, &font, &texture_creator);
+    let mut previous_main_menu = main_menu.continue_to_game;
 
-    let mut died_at = Instant::now();
-    let mut dead = false;
+    let mut game = Game::new(window_size, texture_creator, tx);
 
     //game loop
     'running: loop {
@@ -201,11 +196,11 @@ fn main() -> Result<(), String> {
         let k_input = KeyboardInput {
             forward: keys.get(&Keycode::W).is_some(),
             back: keys.get(&Keycode::S).is_some(),
-            left: keys.get(&Keycode::A).is_some(),
-            right: keys.get(&Keycode::D).is_some(),
+            left: false,
+            right: false,
 
-            rotate_left: keys.get(&Keycode::Q).is_some(),
-            rotate_right: keys.get(&Keycode::E).is_some(),
+            rotate_left: keys.get(&Keycode::A).is_some(),
+            rotate_right: keys.get(&Keycode::D).is_some(),
 
             shoot: keys.get(&Keycode::Space).is_some(),
         };
@@ -214,11 +209,7 @@ fn main() -> Result<(), String> {
 
         if let Some(c) = &controller {
             c_input = ControllerInput {
-                left: (
-                    // clamp(c.axis(Axis::LeftY) as f32 / i16::MAX as f32),
-                    0.0,
-                    clamp(c.axis(Axis::LeftY) as f32 / i16::MAX as f32),
-                ),
+                left: (0.0, clamp(c.axis(Axis::LeftY) as f32 / i16::MAX as f32)),
                 right: (
                     clamp(c.axis(Axis::RightX) as f32 / i16::MAX as f32),
                     clamp(c.axis(Axis::RightY) as f32 / i16::MAX as f32),
@@ -240,183 +231,92 @@ fn main() -> Result<(), String> {
         canvas.clear();
         canvas.set_draw_color(Color::RGB(0, 0, 0));
 
-        if !dead {
-            player.update(window_size, delta_seconds / 100.0, k_input, c_input);
-            player.render(&mut canvas);
-
-            for asteroid in asteroids.iter_mut() {
-                asteroid.update(window_size, delta_seconds / 100.0, k_input, c_input);
-            }
-        } else if died_at.elapsed().as_secs() >= 1 {
-            dead = false;
+        if main_menu.continue_to_game && !previous_main_menu {
+            game.start();
         }
+        previous_main_menu = main_menu.continue_to_game;
 
-        for asteroid in asteroids.iter() {
-            asteroid.render(&mut canvas);
-        }
-
-        let shoot = k_input.shoot || c_input.shoot;
-        if !previous_shoot && shoot && !dead {
-            let bullet_vec = Vec2::new(PLAYER_SPRITE_WIDTH as f32 / 2.0, 0.0);
-            let bullet_rect = set_vec_angle(bullet_vec, player.angle);
-
-            let ship_width = PLAYER_SPRITE_WIDTH as f32;
-            let ship_height = PLAYER_SPRITE_HEIGHT as f32;
-
-            // A
-            let ship_center = Vec2::new(
-                player.pos.x + ship_width / 2.0,
-                player.pos.y + ship_height / 2.0,
-            );
-
-            // B
-            let bullet_final = transform_to_ship_space(&player, bullet_rect);
-
-            let run = -(ship_center.x - bullet_final.x);
-            let rise = -(ship_center.y - bullet_final.y);
-
-            let bullet = Bullet {
-                pos: bullet_final,
-                velocity: Vec2::new(run * 2.0, rise * 2.0) + player.velocity,
-            };
-            bullets.push(bullet);
-        }
-        previous_shoot = shoot;
-
-        if !dead {
-            for bullet in bullets.iter_mut() {
-                bullet.update(window_size, delta_seconds / 100.0, k_input, c_input);
-                bullet.render(&mut canvas);
-            }
+        if !main_menu.continue_to_game {
+            main_menu.update(window_size, delta_seconds / 100.0, k_input, c_input);
+            main_menu.render(&mut canvas);
         } else {
-            bullets = Vec::new();
-        }
-
-        let mut asteroids_to_create: Vec<Asteroid> = Vec::new();
-        asteroids.retain(|asteroid| {
-            let mut retain_asteroid = true;
-
-            if is_colliding(&player, asteroid) {
-                println!("Collding!");
-                player.pos = Vec2::new(
-                    window_size.0 as f32 / 2.0 - 150.0 / 2.0,
-                    window_size.1 as f32 / 2.0 - 150.0 / 2.0,
+            if !game.finished {
+                game.update(window_size, delta_seconds / 100.0, k_input, c_input);
+                game.render(&mut canvas);
+                let score_texture = render_text(
+                    format!("score: {}", game.score),
+                    &font,
+                    &game.texture_creator,
+                )?;
+                let score_texture_query = score_texture.query();
+                let score_target = Rect::new(
+                    (window_size.0 / 2) as i32 - (score_texture_query.width / 2) as i32,
+                    0,
+                    score_texture_query.width,
+                    score_texture_query.height,
                 );
-                player.velocity = Vec2::new(0.0, 0.0);
-                player.angle = 0.0;
-                died_at = Instant::now();
-                dead = true;
+                canvas.copy(&score_texture, None, score_target);
 
-                match get_new_variant(asteroid) {
-                    None => {}
-                    Some(new_variant) => {
-                        let mut new_asteroid = Asteroid::new_with_position(
-                            texture_creator.load_texture("assets/asteroid.png").unwrap(),
-                            asteroid.pos,
-                        );
-                        new_asteroid.variant = new_variant;
-                        asteroids_to_create.push(new_asteroid);
-                    }
-                };
+                let fps_texture = render_text(
+                    format!("fps: {}", frames_per_second as i32),
+                    &font,
+                    &game.texture_creator,
+                )
+                .unwrap();
+                let fps_texture_query = fps_texture.query();
+                let fps_target = Rect::new(0, 0, fps_texture_query.width, fps_texture_query.height);
+                canvas.copy(&fps_texture, None, fps_target);
 
-                match get_new_variant(asteroid) {
-                    None => {}
-                    Some(new_variant) => {
-                        let mut new_asteroid = Asteroid::new_with_position(
-                            texture_creator.load_texture("assets/asteroid.png").unwrap(),
-                            asteroid.pos,
-                        );
-                        new_asteroid.variant = new_variant;
-                        asteroids_to_create.push(new_asteroid);
-                    }
-                };
-
-                // Destroy asteroid
-                retain_asteroid = false;
-            }
-
-            bullets.retain(|bullet| {
-                let mut retain_bullet = true;
-                if is_colliding(bullet, asteroid) {
-                    println!("COLLIDE");
-                    match get_new_variant(asteroid) {
-                        None => {}
-                        Some(new_variant) => {
-                            let mut new_asteroid = Asteroid::new_with_position(
-                                texture_creator.load_texture("assets/asteroid.png").unwrap(),
-                                asteroid.pos,
-                            );
-                            new_asteroid.variant = new_variant;
-                            asteroids_to_create.push(new_asteroid);
-                        }
-                    };
-
-                    match get_new_variant(asteroid) {
-                        None => {}
-                        Some(new_variant) => {
-                            let mut new_asteroid = Asteroid::new_with_position(
-                                texture_creator.load_texture("assets/asteroid.png").unwrap(),
-                                asteroid.pos,
-                            );
-                            new_asteroid.variant = new_variant;
-                            asteroids_to_create.push(new_asteroid);
-                        }
-                    };
-
-                    score += 10;
-
-                    // Destroy both
-                    retain_asteroid = false;
-                    retain_bullet = false;
+                if game.dead {
+                    let dead_texture =
+                        render_text("DEAD".to_string(), &font, &game.texture_creator)?;
+                    let dead_texture_query = dead_texture.query();
+                    let dead_target = Rect::new(
+                        (window_size.0 / 2) as i32 - (dead_texture_query.width / 2) as i32,
+                        (window_size.1 / 2) as i32 - (dead_texture_query.height / 2) as i32,
+                        dead_texture_query.width,
+                        dead_texture_query.height,
+                    );
+                    canvas.copy(&dead_texture, None, dead_target);
                 }
-                retain_bullet
-            });
+            } else {
+                let thanks_texture = render_text(
+                    "Thanks for playing!".to_string(),
+                    &font,
+                    &game.texture_creator,
+                )?;
+                let thanks_texture_query = thanks_texture.query();
+                let thanks_target = Rect::new(
+                    (window_size.0 / 2) as i32 - (thanks_texture_query.width / 2) as i32 - 25,
+                    (window_size.1 / 2) as i32 - (thanks_texture_query.height / 2) as i32 - 25,
+                    thanks_texture_query.width,
+                    thanks_texture_query.height,
+                );
+                canvas.copy(&thanks_texture, None, thanks_target);
 
-            retain_asteroid
-        });
+                let final_score_texture = render_text(
+                    format!("Final Score: {}", game.score),
+                    &font,
+                    &game.texture_creator,
+                )?;
+                let final_score_texture_query = final_score_texture.query();
+                let final_score_target = Rect::new(
+                    (window_size.0 / 2) as i32 - (final_score_texture_query.width / 2) as i32 + 25,
+                    (window_size.1 / 2) as i32 - (final_score_texture_query.height / 2) as i32 + 25,
+                    final_score_texture_query.width,
+                    final_score_texture_query.height,
+                );
+                canvas.copy(&final_score_texture, None, final_score_target);
 
-        asteroids.extend(asteroids_to_create);
-
-        canvas.set_draw_color(Color::RGBA(195, 217, 255, 255));
-
-        let score_texture = render_text(
-            format!("score: {}", score),
-            &font,
-            &mut canvas,
-            &texture_creator,
-        )?;
-
-        let score_texture_query = score_texture.query();
-        let score_target = Rect::new(
-            (window_size.0 / 2) as i32 - (score_texture_query.width / 2) as i32,
-            0,
-            score_texture_query.width,
-            score_texture_query.height,
-        );
-        canvas.copy(&score_texture, None, score_target);
-
-        let fps_texture = render_text(
-            format!("fps: {}", frames_per_second as i32),
-            &font,
-            &mut canvas,
-            &texture_creator,
-        )?;
-
-        let fps_texture_query = fps_texture.query();
-        let fps_target = Rect::new(0, 0, fps_texture_query.width, fps_texture_query.height);
-        canvas.copy(&fps_texture, None, fps_target);
-
-        if dead {
-            let dead_texture =
-                render_text("DEAD".to_string(), &font, &mut canvas, &texture_creator)?;
-            let dead_texture_query = dead_texture.query();
-            let dead_target = Rect::new(
-                (window_size.0 / 2) as i32 - (dead_texture_query.width / 2) as i32,
-                (window_size.1 / 2) as i32 - (dead_texture_query.height / 2) as i32,
-                dead_texture_query.width,
-                dead_texture_query.height,
-            );
-            canvas.copy(&dead_texture, None, dead_target);
+                if k_input.shoot || c_input.shoot {
+                    main_menu.continue_to_game = false;
+                    game = Game::new(window_size, game.texture_creator, game.music_tx);
+                    thread::sleep(Duration::new(0, 500000000));
+                    let main_menu_sound =
+                        Sound::new("assets/Asteroids_MAIN_MENU.mp3", SoundType::Music);
+                    game.music_tx.send(main_menu_sound);
+                }
+            }
         }
 
         canvas.set_draw_color(Color::RGB(0, 0, 0));

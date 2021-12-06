@@ -11,7 +11,6 @@ pub mod graphics {
     pub fn render_text<T>(
         text: String,
         font: &Font,
-        canvas: &mut WindowCanvas,
         texture_creator: &TextureCreator<T>,
     ) -> Result<Texture, String> {
         let surface = font

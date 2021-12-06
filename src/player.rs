@@ -1,5 +1,7 @@
 pub mod player {
     extern crate sdl2;
+    use crate::game_object::game_object::AsGameObject;
+    use crate::game_object::game_object::AsRenderable;
     use crate::game_object::game_object::GameObject;
     use crate::game_object::game_object::Renderable;
     use crate::ControllerInput;
@@ -28,6 +30,12 @@ pub mod player {
         pub velocity: Vec2,
     }
 
+    impl AsGameObject for Bullet {
+        fn as_game_object(&mut self) -> &mut dyn GameObject {
+            self
+        }
+    }
+
     impl GameObject for Bullet {
         fn update(
             &mut self,
@@ -40,20 +48,20 @@ pub mod player {
         }
     }
 
+    impl AsRenderable for Bullet {
+        fn as_renderable(&mut self) -> &mut dyn Renderable {
+            self
+        }
+    }
+
     impl Renderable for Bullet {
-        fn set_sprite() {
-            todo!()
-        }
-        fn get_sprite() {
-            todo!()
-        }
         fn set_position(&mut self, _: sdl2::rect::Rect) {
             todo!()
         }
         fn get_position(&self) -> sdl2::rect::Rect {
             Rect::new(self.pos.x as i32, self.pos.y as i32, 30, 30)
         }
-        fn render(&self, canvas: &mut WindowCanvas) {
+        fn render(&mut self, canvas: &mut WindowCanvas) {
             draw_point(canvas, self.pos);
         }
     }
@@ -65,6 +73,12 @@ pub mod player {
         pub angle: f32,
         pub velocity: Vec2,
         pub previous_shoot: bool,
+    }
+
+    impl AsGameObject for Player {
+        fn as_game_object(&mut self) -> &mut dyn GameObject {
+            self
+        }
     }
 
     impl GameObject for Player {
@@ -159,8 +173,15 @@ pub mod player {
             self.velocity = velocity;
         }
     }
+
+    impl AsRenderable for Player {
+        fn as_renderable(&mut self) -> &mut dyn Renderable {
+            self
+        }
+    }
+
     impl Renderable for Player {
-        fn render(&self, canvas: &mut WindowCanvas) {
+        fn render(&mut self, canvas: &mut WindowCanvas) {
             let rect = Rect::new(
                 self.pos.x as i32,
                 self.pos.y as i32,
@@ -178,12 +199,6 @@ pub mod player {
                     false,
                 )
                 .ok();
-        }
-        fn set_sprite() {
-            todo!()
-        }
-        fn get_sprite() {
-            todo!()
         }
         fn get_position(&self) -> Rect {
             Rect::new(
@@ -207,7 +222,7 @@ pub mod player {
         )
     }
 
-    fn draw_point(canvas: &mut WindowCanvas, pos: Vec2) {
+    pub fn draw_point(canvas: &mut WindowCanvas, pos: Vec2) {
         let scale = 10.0;
         canvas.set_scale(scale, scale);
         canvas.set_draw_color(Color::RGB(255, 210, 0));
