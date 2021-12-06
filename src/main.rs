@@ -66,13 +66,7 @@ fn clamp(num: f32) -> f32 {
     }
 }
 
-//TODO: Go through and outsource certain things to different files
 fn main() -> Result<(), String> {
-    // //create channel for thread info passing
-    let (tx, rx) = channel();
-
-    let thread_variable = Arc::new(Mutex::new("Oh_boiii".to_string()));
-
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
