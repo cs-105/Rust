@@ -25,6 +25,8 @@ use sdl2::render::Texture;
 use sdl2::render::TextureCreator;
 use sdl2::render::TextureQuery;
 use sdl2::ttf::Font;
+use std::sync::mpsc::Receiver;
+use std::sync::mpsc::Sender;
 
 use glam::Vec2;
 use sdl2::controller::Axis;
@@ -39,6 +41,7 @@ use sdl2::rect::Rect;
 use sdl2::render::WindowCanvas;
 use sdl2::video::GLProfile;
 use std::collections::HashSet;
+use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 use std::time::Instant;
@@ -46,6 +49,7 @@ use std::time::Instant;
 //imports from music file
 use crate::music::music::in_game_music;
 use crate::music::music::main_menu_music;
+use crate::music::music::Sound;
 
 //defining constants
 //dimensions and title of the window to be rendered
@@ -108,6 +112,14 @@ fn main() -> Result<(), String> {
         previous_shoot: false,
     };
 
+    let (tx, rx): (Sender<Sound>, Receiver<Sound>) = mpsc::channel();
+
+    // Starting the main menu soundtrack
+    let music_thread = thread::spawn(move || main_menu_music(rx));
+    let sound = Sound::new("assets/Asteroids_GAME.mp3");
+
+    tx.send(sound);
+
     let game_controller_subsystem = sdl_context.game_controller()?;
     let ttf_context = sdl2::ttf::init().map_err(|e| e.to_string())?;
     let mut font = ttf_context.load_font("assets/pressstart2p.ttf", 36)?;
@@ -143,9 +155,6 @@ fn main() -> Result<(), String> {
     let mut old_time: Duration = now.elapsed();
 
     let mut fps_instant = Instant::now();
-
-    // Starting the main menu soundtrack
-    let music_thread = thread::spawn(|| main_menu_music());
 
     let mut asteroids: Vec<Asteroid> = Vec::new();
 
