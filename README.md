@@ -23,7 +23,17 @@ For Linux and MacOS users run this line of code to get cargo.
 curl https://sh.rustup.rs -sSf | sh
 ```
 
+## Windows
+Make sure you have Visual Studio installed (not Visual Studio Code), and download SDL2, [SDL2_image](https://www.libsdl.org/projects/SDL_image/), and [SDL2_ttf](https://www.libsdl.org/projects/SDL_ttf/). (Make sure to download the VC devel versions)
 
+Extract the SDL2 archives, then add the .lib and .dll files to your Rust toolchain path.
+
+For example:
+```
+C:\Users\%USER%\.rustup\toolchains\stable-x86_64-pc-windows-msvc\lib\rustlib\x86_64-pc-windows-msvc\lib
+```
+
+You should be good to continue to the next step.
 
 ## Running the Game
 
