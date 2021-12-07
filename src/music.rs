@@ -1,55 +1,64 @@
 pub mod music {
-
-    use futures::executor::block_on;
-    use rodio::source::{SineWave, Source};
+    use rodio::source::Source;
     use rodio::{Decoder, OutputStream, Sink};
     use std::fs::File;
     use std::io::BufReader;
-    use std::thread;
-    use std::time::Duration;
+    use std::sync::mpsc;
 
-    pub fn main_menu_music() {
+    pub struct SoundCommand {}
+
+    pub enum SoundType {
+        Music,
+        SoundEffect,
+    }
+
+    pub struct Sound {
+        filename: String,
+        source: BufReader<File>,
+        sound_type: SoundType,
+    }
+
+    impl Sound {
+        pub fn new(filename: &str, sound_type: SoundType) -> Self {
+            let file = BufReader::new(File::open(filename).unwrap());
+            Sound {
+                filename: filename.to_string(),
+                source: file,
+                sound_type: sound_type,
+            }
+        }
+    }
+
+    pub fn start_sound_thread(tx: mpsc::Receiver<Sound>) {
         // Make Stream Handle
         let (_stream, stream_handle) = OutputStream::try_default().unwrap();
-
-
+        let mut sink = Sink::try_new(&stream_handle).unwrap();
 
         // Open Music File
-        let file = BufReader::new(File::open("assets/Asteroids_MAIN_MENU.mp3").unwrap());
-
-        let source = Decoder::new(file).unwrap();
-
-        // Decode the Music File
-        let music_file = stream_handle.play_raw(source.convert_samples());
-
-        // Set length or end point for music stream
-        std::thread::sleep(std::time::Duration::from_secs(10));
-
-        thread::sleep(Duration::from_millis(500));
-    }
-
-    pub fn in_game_music() {
-        let (_stream, stream_handle) = OutputStream::try_default().unwrap();
-        let sink = Sink::try_new(&stream_handle).unwrap();
-        let file = BufReader::new(File::open("assets/Asteroids_GAME.mp3").unwrap());
-        let source = Decoder::new(file).unwrap();
-        sink.append(source);
-        sink.sleep_until_end();        
-        
-
-        // sink.sleep_until_end();
-    }
-
-    pub fn laser_sound() {
-        let (_stream, stream_handle) = OutputStream::try_default().unwrap();
-        let sink = Sink::try_new(&stream_handle).unwrap();
-        let file2 = BufReader::new(File::open("assets/Laser_Sound.mp3").unwrap());
-        let source2 = Decoder::new(file2).unwrap();
-        sink.append(source2);
-        sink.sleep_until_end();
-         
-        
-
-            // sink.sleep_until_end();
+        loop {
+            // Receive new messages in thread
+            for val in tx.recv().iter() {
+                match val.sound_type {
+                    // If music, then stop the music currently playing and start again
+                    SoundType::Music => {
+                        let file = BufReader::new(File::open(val.filename.clone()).unwrap());
+                        let source = Decoder::new(file).unwrap();
+                        sink.stop();
+                        drop(&sink);
+                        sink = Sink::try_new(&stream_handle).unwrap();
+                        sink.set_volume(4.0);
+                        // Decode the Music File
+                        sink.append(source);
+                        sink.play();
+                    }
+                    // If sound effect, then just play it until it ends without stopping the music
+                    SoundType::SoundEffect => {
+                        let file = BufReader::new(File::open(val.filename.clone()).unwrap());
+                        let source = Decoder::new(file).unwrap();
+                        stream_handle.play_raw(source.convert_samples());
+                    }
+                }
+            }
+        }
     }
 }
